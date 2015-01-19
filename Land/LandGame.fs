@@ -1,5 +1,7 @@
 ﻿namespace Game1
 
+open System
+
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
@@ -22,7 +24,6 @@ type LandGame() as _this =
     let mutable device = Unchecked.defaultof<GraphicsDevice>
     let mutable terrain = Unchecked.defaultof<Terrain>
     let mutable grassTexture = Unchecked.defaultof<Texture2D>
-    let mutable waterBumpMap = Unchecked.defaultof<Texture2D>
     let mutable lightDirection = Unchecked.defaultof<Vector3>
     let mutable waterHeight = Unchecked.defaultof<single>
     let mutable refractionRenderTarget = Unchecked.defaultof<RenderTarget2D>
@@ -34,6 +35,7 @@ type LandGame() as _this =
     let mutable camera = Unchecked.defaultof<FreeCamera>
     let mutable input = Unchecked.defaultof<Input>
     let mutable originalMouseState = Unchecked.defaultof<MouseState>
+    let mutable perlinTexture3D = Unchecked.defaultof<Texture3D>
     do graphics.PreferredBackBufferWidth <- 800
     do graphics.PreferredBackBufferHeight <- 600
     do graphics.ApplyChanges()
@@ -44,7 +46,7 @@ type LandGame() as _this =
         do terrain.DeformCircularFaults 300 2.0f 20.0f 100.0f
         do terrain.Normalize 0.5f 2.0f
         do terrain.Stretch 2.5f
-        do terrain.Normalize -1.0f 4.0f
+        do terrain.Normalize -5.0f 10.0f
         vertices <- GetVertices terrain
         indices <- GetIndices terrain.Size
 
@@ -60,7 +62,6 @@ type LandGame() as _this =
         world <- Matrix.Identity
         projection <- Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 1000.0f)
         grassTexture <- _this.Content.Load<Texture2D>("grass")
-        waterBumpMap <- _this.Content.Load<Texture2D>("waterbump")
 
         let dir = Vector3(0.0f, -0.5f, -1.0f)
         dir.Normalize()
@@ -110,6 +111,22 @@ type LandGame() as _this =
         skyDome <- _this.Content.Load<Model>("dome")
         skyDome.Meshes.[0].MeshParts.[0].Effect <- effect.Clone()
 
+        // perlin noise texture
+
+        perlinTexture3D <- new Texture3D(device, 16, 16, 16, false, SurfaceFormat.Color)
+        let random = new Random()
+
+        let randomVectorColour x =
+            let v = Vector3(single (random.NextDouble() * 2.0 - 1.0),
+                            single (random.NextDouble() * 2.0 - 1.0),
+                            single (random.NextDouble() * 2.0 - 1.0))
+            v.Normalize()
+            Color(v)
+
+        let randomVectors = Array.init (16 * 16 * 16) randomVectorColour
+
+        perlinTexture3D.SetData<Color>(randomVectors);
+
     override _this.Update(gameTime) =
         let time = float32 gameTime.TotalGameTime.TotalSeconds
 
@@ -129,16 +146,16 @@ type LandGame() as _this =
         do base.Update(gameTime)
 
     member _this.DrawRefractionMap =
-        let clipPlane = Vector4(Vector3.Down, waterHeight - 0.001f)
+        let clipPlane = Vector4(Vector3.Down, waterHeight - 0.00001f)
         device.SetRenderTarget(refractionRenderTarget)
         device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
         _this.DrawTerrain view clipPlane
         device.SetRenderTarget(null)
 
     member _this.DrawReflectionMap =
-        let clipPlane = Vector4(Vector3.Up, waterHeight + 0.001f)
+        let clipPlane = Vector4(Vector3.Up, waterHeight + 0.00001f)
         device.SetRenderTarget(reflectionRenderTarget)
-        device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.CornflowerBlue, 1.0f, 0)
+        device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
         _this.DrawSkyDome reflectionView world
         _this.DrawTerrain reflectionView clipPlane
         device.SetRenderTarget(null)
@@ -152,7 +169,7 @@ type LandGame() as _this =
         _this.DrawSkyDome view world
         _this.DrawTerrain view noClipPlane
         _this.DrawWater time
-        //this.DrawDebug refractionRenderTarget
+        //_this.DrawDebug refractionRenderTarget
         do base.Draw(gameTime)
 
     member _this.DrawTerrain (viewMatrix: Matrix) (clipPlane: Vector4) =
@@ -186,12 +203,13 @@ type LandGame() as _this =
         effect.Parameters.["xCamPos"].SetValue(camera.Position)
         effect.Parameters.["xReflectionMap"].SetValue(reflectionRenderTarget)
         effect.Parameters.["xRefractionMap"].SetValue(refractionRenderTarget)
-        effect.Parameters.["xWaterBumpMap"].SetValue(waterBumpMap)
         effect.Parameters.["xWaveLength"].SetValue(0.1f)
         effect.Parameters.["xWaveHeight"].SetValue(0.2f)
         effect.Parameters.["xTime"].SetValue(time)
-        effect.Parameters.["xWindForce"].SetValue(0.001f)
+        effect.Parameters.["xWindForce"].SetValue(0.0015f)
         effect.Parameters.["xWindDirection"].SetValue(windDirection)
+        effect.Parameters.["xRandomTexture3D"].SetValue(perlinTexture3D)
+        effect.Parameters.["xPerlinSize3D"].SetValue(15.0f)
 
         effect.CurrentTechnique.Passes |> Seq.iter
             (fun pass ->

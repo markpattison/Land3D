@@ -40,6 +40,9 @@ float xTime;
 float3 xWindDirection;
 float xWindForce;
 
+float xPerlinSize2D;
+float xPerlinSize3D;
+
 //------- Texture Samplers --------
 
 Texture xTexture;
@@ -56,6 +59,91 @@ sampler DebugTextureSampler = sampler_state { texture = <xDebugTexture>; magfilt
 
 Texture xWaterBumpMap;
 sampler WaterBumpMapSampler = sampler_state { texture = <xWaterBumpMap>; magfilter = LINEAR; minfilter = LINEAR; mipfilter = LINEAR; AddressU = mirror; AddressV = mirror; };
+
+Texture xRandomTexture2D;
+sampler RandomTextureSampler2D = sampler_state { texture = <xRandomTexture2D>; AddressU = WRAP; AddressV = WRAP; };
+
+Texture xRandomTexture3D;
+sampler RandomTextureSampler3D = sampler_state { texture = <xRandomTexture3D>; AddressU = WRAP; AddressV = WRAP; AddressW = WRAP; };
+
+//------- Perlin noise functions -------
+
+float Perlin2D(float2 pIn)
+{
+	float2 p = pIn * xPerlinSize2D;
+
+		float2 posAA = floor(p);
+		float2 pfrac = p - posAA;
+
+		float2 posBA = posAA + float2(1.0, 0.0);
+		float2 posAB = posAA + float2(0.0, 1.0);
+		float2 posBB = posAA + float2(1.0, 1.0);
+
+		float2 colAA = tex2D(RandomTextureSampler2D, posAA / xPerlinSize2D) * 2.0 - 1.0;
+		float2 colBA = tex2D(RandomTextureSampler2D, posBA / xPerlinSize2D) * 2.0 - 1.0;
+		float2 colAB = tex2D(RandomTextureSampler2D, posAB / xPerlinSize2D) * 2.0 - 1.0;
+		float2 colBB = tex2D(RandomTextureSampler2D, posBB / xPerlinSize2D) * 2.0 - 1.0;
+
+		float sAA = mul(colAA, p - posAA);
+	float sBA = mul(colBA, p - posBA);
+	float sAB = mul(colAB, p - posAB);
+	float sBB = mul(colBB, p - posBB);
+
+	float2 s = pfrac * pfrac * (3 - 2 * pfrac);
+
+		float sPA = sAA + s.x * (sBA - sAA);
+	float sPB = sAB + s.x * (sBB - sAB);
+
+	return sPA + s.y * (sPB - sPA);
+}
+
+float Perlin3D(float3 pIn)
+{
+	float3 p = pIn * xPerlinSize3D;
+
+		float3 posAAA = floor(p);
+		float3 t = p - posAAA;
+
+		float3 posBAA = posAAA + float3(1.0, 0.0, 0.0);
+		float3 posABA = posAAA + float3(0.0, 1.0, 0.0);
+		float3 posBBA = posAAA + float3(1.0, 1.0, 0.0);
+		float3 posAAB = posAAA + float3(0.0, 0.0, 1.0);
+		float3 posBAB = posAAA + float3(1.0, 0.0, 1.0);
+		float3 posABB = posAAA + float3(0.0, 1.0, 1.0);
+		float3 posBBB = posAAA + float3(1.0, 1.0, 1.0);
+
+		float3 colAAA = tex3D(RandomTextureSampler3D, posAAA / xPerlinSize3D) * 2.0 - 1.0;
+		float3 colBAA = tex3D(RandomTextureSampler3D, posBAA / xPerlinSize3D) * 2.0 - 1.0;
+		float3 colABA = tex3D(RandomTextureSampler3D, posABA / xPerlinSize3D) * 2.0 - 1.0;
+		float3 colBBA = tex3D(RandomTextureSampler3D, posBBA / xPerlinSize3D) * 2.0 - 1.0;
+		float3 colAAB = tex3D(RandomTextureSampler3D, posAAB / xPerlinSize3D) * 2.0 - 1.0;
+		float3 colBAB = tex3D(RandomTextureSampler3D, posBAB / xPerlinSize3D) * 2.0 - 1.0;
+		float3 colABB = tex3D(RandomTextureSampler3D, posABB / xPerlinSize3D) * 2.0 - 1.0;
+		float3 colBBB = tex3D(RandomTextureSampler3D, posBBB / xPerlinSize3D) * 2.0 - 1.0;
+
+	float sAAA = mul(colAAA, p - posAAA);
+	float sBAA = mul(colBAA, p - posBAA);
+	float sABA = mul(colABA, p - posABA);
+	float sBBA = mul(colBBA, p - posBBA);
+	float sAAB = mul(colAAB, p - posAAB);
+	float sBAB = mul(colBAB, p - posBAB);
+	float sABB = mul(colABB, p - posABB);
+	float sBBB = mul(colBBB, p - posBBB);
+
+	//float3 s = t * t * (3 - 2 * t);
+	float3 s = t * t * t * (t * (t * 6 - 15) + 10);
+
+	float sPAA = sAAA + s.x * (sBAA - sAAA);
+	float sPAB = sAAB + s.x * (sBAB - sAAB);
+	float sPBA = sABA + s.x * (sBBA - sABA);
+	float sPBB = sABB + s.x * (sBBB - sABB);
+
+	float sPPA = sPAA + s.y * (sPBA - sPAA);
+	float sPPB = sPAB + s.y * (sPBB - sPAB);
+
+	float sPPP = sPPA + s.z * (sPPB - sPPA);
+	return sPPP;
+}
 
 //------- Technique: Pretransformed --------
 
@@ -280,7 +368,7 @@ struct WVertexToPixel
 {
 	float4 Position                 : SV_POSITION;
 	float4 ReflectionMapSamplingPos    : TEXCOORD1;
-	float2 BumpMapSamplingPos        : TEXCOORD2;
+	float3 BumpMapSamplingPos        : TEXCOORD2;
 	float4 RefractionMapSamplingPos : TEXCOORD3;
 	float4 Position3D                : TEXCOORD4;
 };
@@ -301,7 +389,8 @@ WVertexToPixel WaterVS(float4 inPos : SV_POSITION, float2 inTex : TEXCOORD)
 
 	Output.Position = mul(inPos, preWorldViewProjection);
 	float2 moveVector = float2(0, xTime * xWindForce);
-	Output.BumpMapSamplingPos = (inTex + moveVector) / xWaveLength;
+	Output.BumpMapSamplingPos.xz = (inTex.xy + moveVector.xy) / xWaveLength;
+	Output.BumpMapSamplingPos.y = xTime / 100.0f;
 	Output.ReflectionMapSamplingPos = mul(inPos, preWorldReflectionViewProjection);
 	Output.RefractionMapSamplingPos = mul(inPos, preWorldViewProjection);
 	Output.Position3D = mul(inPos, xWorld);
@@ -309,12 +398,36 @@ WVertexToPixel WaterVS(float4 inPos : SV_POSITION, float2 inTex : TEXCOORD)
 	return Output;
 }
 
+float PerlinWater(float3 pos)
+{
+	float3 offset1 = (0.1f, 0.6f, 0.3f);
+	float3 offset2 = (0.45f, 0.17f, 0.88f);
+	float3 offset3 = (0.83f, 0.44f, 0.09f);
+	return 0.25f * Perlin3D(pos) + 0.25f * Perlin3D((pos + offset1) / 1.1f) + 0.25f * Perlin3D((pos + offset2) / 1.25f) + 0.25f * Perlin3D((pos + offset3) / 0.1f);
+}
+
 WPixelToFrame WaterPS(WVertexToPixel PSIn)
 {
 	WPixelToFrame Output = (WPixelToFrame)0;
 
-	float4 bumpColor = tex2D(WaterBumpMapSampler, PSIn.BumpMapSamplingPos);
-	float2 perturbation = xWaveHeight * (bumpColor.rg - 0.5f)*2.0f;
+	//float4 bumpColor = tex2D(WaterBumpMapSampler, PSIn.BumpMapSamplingPos);
+	//float2 perturbation = xWaveHeight * (bumpColor.rg - 0.5f)*2.0f;
+	//float3 normalVector = (bumpColor.rbg - 0.5f) * 2.0f;
+
+	float epsilon = 1.0f;
+
+	float3 pX = PSIn.BumpMapSamplingPos;
+	pX.x += epsilon;
+	float3 pZ = PSIn.BumpMapSamplingPos;
+	pZ.z += epsilon;
+
+	float noiseScale = 0.1f;
+
+	float noise = PerlinWater(PSIn.BumpMapSamplingPos) * noiseScale;
+	float3 dNoise = float3(PerlinWater(pX) * noiseScale - noise, 0.0f, PerlinWater(pZ) * noiseScale - noise);
+	float3 modNormal = float3(dNoise.x, epsilon, dNoise.z);
+	float3 normalVector = normalize(modNormal);
+	float2 perturbation = xWaveHeight * normalVector.xz;
 
 	float2 projectedReflTexCoords;
 	projectedReflTexCoords.x = PSIn.ReflectionMapSamplingPos.x / PSIn.ReflectionMapSamplingPos.w / 2.0f + 0.5f;
@@ -332,7 +445,6 @@ WPixelToFrame WaterPS(WVertexToPixel PSIn)
 	float4 refractiveColor = lerp(refractiveColorNoPerturb, refractiveColorPerturb, alpha);
 
 	float3 eyeVector = normalize(xCamPos - PSIn.Position3D);
-	float3 normalVector = (bumpColor.rbg - 0.5f) * 2.0f;
 	float fresnelTerm = dot(eyeVector, normalVector);
 	
 	float3 reflectionVector = reflect(xLightDirection, normalVector);
@@ -341,10 +453,10 @@ WPixelToFrame WaterPS(WVertexToPixel PSIn)
 	
 	float4 combinedColor = lerp(reflectiveColor, refractiveColor, fresnelTerm);
 	float4 dullColor = float4(0.3f, 0.35f, 0.45f, 1.0f);
-	Output.Color = lerp(combinedColor, dullColor, 0.3f);
+	Output.Color = lerp(combinedColor, dullColor, 0.4f);
 
 	Output.Color.rgb += specular;
-
+	//Output.Color = lerp(Output.Color, float4(400.0f * noise, 0.0f, 0.0f, 1.0f), 0.999f);
 	return Output;
 }
 
