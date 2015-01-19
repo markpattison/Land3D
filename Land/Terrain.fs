@@ -22,11 +22,11 @@ type Terrain(size) =
     let sizeSingle = single size
     let sizeVertices = size + 1
     let height = Array2D.zeroCreate sizeVertices sizeVertices
-    member this.Size = size
-    member this.SizeVertices = sizeVertices
-    member this.NumberOfVertices = sizeVertices * sizeVertices
-    member this.Height x z = height.[x, z]
-    member this.DeformCircularFaults numFaults maxDelta minSize maxSize =
+    member _this.Size = size
+    member _this.SizeVertices = sizeVertices
+    member _this.NumberOfVertices = sizeVertices * sizeVertices
+    member _this.Height x z = height.[x, z]
+    member _this.DeformCircularFaults numFaults maxDelta minSize maxSize =
         let rand = new Random()
         for i = 1 to numFaults do
             let faultX = sizeSingle * rand.NextSingle
@@ -41,7 +41,7 @@ type Terrain(size) =
                     let distSqd = distX * distX + distZ * distZ
                     if (distSqd < faultSizeSqd) then
                         height.[x, z] <- height.[x, z] + faultDelta
-    member private this.ApplyToHeights f =
+    member private _this.ApplyToHeights f =
         for x = 0 to size do
             for z = 0 to size do
                 height.[x, z] <- f height.[x, z]       

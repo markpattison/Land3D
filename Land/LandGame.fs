@@ -2,15 +2,14 @@
 
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
-open Microsoft.Xna.Framework.Input
 
 open FreeCamera
 open Input
 open Terrain
 
-type LandGame() as this =
+type LandGame() as _this =
     inherit Game()
-    let graphics = new GraphicsDeviceManager(this)
+    let graphics = new GraphicsDeviceManager(_this)
     let mutable effect = Unchecked.defaultof<Effect>
     let mutable vertices = Unchecked.defaultof<VertexPositionNormalTexture[]>
     let mutable waterVertices = Unchecked.defaultof<VertexPositionTexture[]>
@@ -49,19 +48,19 @@ type LandGame() as this =
         vertices <- GetVertices terrain
         indices <- GetIndices terrain.Size
 
-    override this.Initialize() =
+    override _this.Initialize() =
         device <- base.GraphicsDevice
         effect <- EffectReader.GetEffect device @"effects.mgfxo"
 
         base.Initialize()
         ()
 
-    override this.LoadContent() =
+    override _this.LoadContent() =
         createTerrain
         world <- Matrix.Identity
         projection <- Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 1000.0f)
-        grassTexture <- this.Content.Load<Texture2D>("grass")
-        waterBumpMap <- this.Content.Load<Texture2D>("waterbump")
+        grassTexture <- _this.Content.Load<Texture2D>("grass")
+        waterBumpMap <- _this.Content.Load<Texture2D>("waterbump")
 
         let dir = Vector3(0.0f, -0.5f, -1.0f)
         dir.Normalize()
@@ -73,16 +72,16 @@ type LandGame() as this =
         reflectionRenderTarget <- new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, device.DisplayMode.Format, DepthFormat.Depth24)
         noClipPlane <- Vector4.Zero
 
-        windDirection <- Vector3(1.0f, 0.0f, 0.0f)
+        windDirection <- Vector3(0.5f, 0.0f, 0.0f)
 
         let halfSize = 0.5f * single terrain.Size
 
         let startPosition = Vector3(0.0f, 10.0f, -(single terrain.Size) / 2.0f)
 
         camera <- FreeCamera(startPosition, 0.0f, 0.0f)
-        Mouse.SetPosition(this.Window.ClientBounds.Width / 2, this.Window.ClientBounds.Height / 2)
+        Mouse.SetPosition(_this.Window.ClientBounds.Width / 2, _this.Window.ClientBounds.Height / 2)
         originalMouseState <- Mouse.GetState()
-        input <- Input(Keyboard.GetState(), Keyboard.GetState(), Mouse.GetState(), Mouse.GetState(), this.Window, originalMouseState, 0, 0)
+        input <- Input(Keyboard.GetState(), Keyboard.GetState(), Mouse.GetState(), Mouse.GetState(), _this.Window, originalMouseState, 0, 0)
 
         waterVertices <-
             [|
@@ -107,16 +106,16 @@ type LandGame() as this =
                 VertexPositionTexture(Vector3(-0.5f, 0.9f, 0.0f), new Vector2(1.0f, 1.0f));
             |]
 
-        cloudMap <- this.Content.Load<Texture2D>("cloudMap_0")
-        skyDome <- this.Content.Load<Model>("dome")
+        cloudMap <- _this.Content.Load<Texture2D>("cloudMap_0")
+        skyDome <- _this.Content.Load<Model>("dome")
         skyDome.Meshes.[0].MeshParts.[0].Effect <- effect.Clone()
 
-    override this.Update(gameTime) =
+    override _this.Update(gameTime) =
         let time = float32 gameTime.TotalGameTime.TotalSeconds
 
-        input <- input.Updated(Keyboard.GetState(), Mouse.GetState(), this.Window)
+        input <- input.Updated(Keyboard.GetState(), Mouse.GetState(), _this.Window)
 
-        if input.Quit then this.Exit()
+        if input.Quit then _this.Exit()
 
         camera <- camera.Updated(input, time)
 
@@ -129,34 +128,34 @@ type LandGame() as this =
 
         do base.Update(gameTime)
 
-    member this.DrawRefractionMap =
+    member _this.DrawRefractionMap =
         let clipPlane = Vector4(Vector3.Down, waterHeight - 0.001f)
         device.SetRenderTarget(refractionRenderTarget)
         device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
-        this.DrawTerrain view clipPlane
+        _this.DrawTerrain view clipPlane
         device.SetRenderTarget(null)
 
-    member this.DrawReflectionMap =
+    member _this.DrawReflectionMap =
         let clipPlane = Vector4(Vector3.Up, waterHeight + 0.001f)
         device.SetRenderTarget(reflectionRenderTarget)
         device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.CornflowerBlue, 1.0f, 0)
-        this.DrawSkyDome reflectionView world
-        this.DrawTerrain reflectionView clipPlane
+        _this.DrawSkyDome reflectionView world
+        _this.DrawTerrain reflectionView clipPlane
         device.SetRenderTarget(null)
 
-    override this.Draw(gameTime) =
+    override _this.Draw(gameTime) =
         let time = (single gameTime.TotalGameTime.TotalMilliseconds) / 100.0f
 
-        this.DrawRefractionMap
-        this.DrawReflectionMap
+        _this.DrawRefractionMap
+        _this.DrawReflectionMap
         do device.Clear(Color.CornflowerBlue)
-        this.DrawSkyDome view world
-        this.DrawTerrain view noClipPlane
-        this.DrawWater time
+        _this.DrawSkyDome view world
+        _this.DrawTerrain view noClipPlane
+        _this.DrawWater time
         //this.DrawDebug refractionRenderTarget
         do base.Draw(gameTime)
 
-    member this.DrawTerrain (viewMatrix: Matrix) (clipPlane: Vector4) =
+    member _this.DrawTerrain (viewMatrix: Matrix) (clipPlane: Vector4) =
         effect.CurrentTechnique <- effect.Techniques.["TexturedClipped"]
         effect.Parameters.["xWorld"].SetValue(world)
         effect.Parameters.["xView"].SetValue(viewMatrix)
@@ -177,7 +176,7 @@ type LandGame() as this =
                 device.DrawUserIndexedPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, vertices, 0, vertices.Length, indices, 0, indices.Length / 3)
             )
 
-    member this.DrawWater time =
+    member _this.DrawWater time =
         effect.CurrentTechnique <- effect.Techniques.["Water"]
         effect.Parameters.["xWorld"].SetValue(world)
         effect.Parameters.["xView"].SetValue(view)
@@ -200,7 +199,7 @@ type LandGame() as this =
                 device.DrawUserPrimitives<VertexPositionTexture>(PrimitiveType.TriangleList, waterVertices, 0, waterVertices.Length / 3)
             )
 
-    member this.DrawDebug (texture: Texture2D) =
+    member _this.DrawDebug (texture: Texture2D) =
         effect.CurrentTechnique <- effect.Techniques.["Debug"]
         effect.Parameters.["xDebugTexture"].SetValue(texture)
 
@@ -210,7 +209,7 @@ type LandGame() as this =
                 device.DrawUserPrimitives<VertexPositionTexture>(PrimitiveType.TriangleList, debugVertices, 0, debugVertices.Length / 3)
             )
 
-    member this.DrawSkyDome (viewMatrix: Matrix) (world: Matrix) =
+    member _this.DrawSkyDome (viewMatrix: Matrix) (world: Matrix) =
         device.DepthStencilState <- DepthStencilState.DepthRead
 
         let modelTransforms = Array.zeroCreate<Matrix> skyDome.Bones.Count
