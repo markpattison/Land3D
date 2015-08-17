@@ -19,7 +19,7 @@ type Input(keyboardState: KeyboardState,
     let mouseDY = mouseState.Y - originalMouseState.Y
     let mouseX = oldMouseX + mouseDX
     let mouseY = oldMouseY + mouseDY
-    do Mouse.SetPosition(gameWindow.ClientBounds.Width / 2, gameWindow.ClientBounds.Height / 2)
+    do if not (obj.ReferenceEquals(gameWindow, null)) then Mouse.SetPosition(gameWindow.ClientBounds.Width / 2, gameWindow.ClientBounds.Height / 2)
 
     member _this.Quit = justPressed(Keys.Escape)
     member _this.MouseX = mouseX

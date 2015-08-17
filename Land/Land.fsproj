@@ -91,7 +91,7 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <PropertyGroup>
-    <PreBuildEvent>"E:\Prog\MonoGame v3.0 build\v3.0\2MGFX.exe" "$(ProjectDir)Content\effects.fx" "$(ProjectDir)Content\effects.mgfxo" /DX11</PreBuildEvent>
+    <PreBuildEvent>"E:\Prog\MonoGame v3.0 build\v3.0\Tools\2MGFX.exe" "$(ProjectDir)Content\effects.fx" "$(ProjectDir)Content\effects.mgfxo" /Profile:DirectX_11</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
