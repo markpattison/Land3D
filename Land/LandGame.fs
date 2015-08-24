@@ -52,7 +52,6 @@ type LandGame() as _this =
 
     override _this.Initialize() =
         device <- base.GraphicsDevice
-        effect <- EffectReader.GetEffect device @"effects.mgfxo"
 
         base.Initialize()
         ()
@@ -61,7 +60,9 @@ type LandGame() as _this =
         createTerrain
         world <- Matrix.Identity
         projection <- Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 1000.0f)
-        grassTexture <- _this.Content.Load<Texture2D>("grass")
+
+        grassTexture <- _this.Content.Load<Texture2D>("Textures/grass")
+        effect <- _this.Content.Load<Effect>("Effects/effects")
 
         let dir = Vector3(0.0f, -0.5f, -1.0f)
         dir.Normalize()
@@ -107,8 +108,8 @@ type LandGame() as _this =
                 VertexPositionTexture(Vector3(-0.5f, 0.9f, 0.0f), new Vector2(1.0f, 1.0f));
             |]
 
-        cloudMap <- _this.Content.Load<Texture2D>("cloudMap_0")
-        skyDome <- _this.Content.Load<Model>("dome")
+        cloudMap <- _this.Content.Load<Texture2D>("Meshes/cloudMap_0")
+        skyDome <- _this.Content.Load<Model>("Meshes/dome")
         skyDome.Meshes.[0].MeshParts.[0].Effect <- effect.Clone()
 
         // perlin noise texture
