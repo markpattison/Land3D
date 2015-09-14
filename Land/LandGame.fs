@@ -146,6 +146,8 @@ type LandGame() as _this =
         let invUpVector = Vector3.Cross(camera.RightDirection, reflectionCameraLookAt - reflectionCameraAt)
         reflectionView <- Matrix.CreateLookAt(reflectionCameraAt, reflectionCameraLookAt, invUpVector)
 
+        lightDirection <- Vector3.Transform(lightDirection, Matrix.CreateRotationX(0.005f))
+
         do base.Update(gameTime)
 
     member _this.DrawRefractionMap =
@@ -247,7 +249,7 @@ type LandGame() as _this =
         let kR = 0.0025f
         let kM = 0.0010f
         let eSun = 20.0f
-        let g = -0.99f
+        let g = -0.95f
         let wavelengths = Vector3(0.650f, 0.570f, 0.440f)
         let invWavelengths = Vector3(wavelengths.X ** -4.0f, wavelengths.Y ** -4.0f, wavelengths.Z ** -4.0f)
 

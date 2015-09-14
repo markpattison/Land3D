@@ -56,21 +56,24 @@ let Normals (terrain:Terrain) =
     let normals = Array2D.zeroCreate<Vector3> terrain.SizeVertices terrain.SizeVertices
     for x = 0 to (terrain.Size - 1) do
         for z = 0 to (terrain.Size - 1) do
-            let triangle1Normal = Vector3(terrain.Height (x + 1) z - terrain.Height x z,
-                                         1.0f,
-                                         terrain.Height x (z + 1) - terrain.Height x z)
+            let bottomLeft = Vector3(0.0f, terrain.Height x z, 0.0f)
+            let bottomRight = Vector3(1.0f, terrain.Height (x + 1) z, 0.0f)
+            let topLeft = Vector3(0.0f, terrain.Height x (z + 1), 1.0f)
+            let topRight = Vector3(1.0f, terrain.Height (x + 1) (z + 1), 1.0f)
+            let triangle1Normal = Vector3.Cross(bottomLeft - topLeft, bottomLeft - bottomRight)
             triangle1Normal.Normalize()
             normals.[x, z] <- normals.[x, z] + triangle1Normal
             normals.[x, z + 1] <- normals.[x, z + 1] + triangle1Normal
             normals.[x + 1, z] <- normals.[x + 1, z] + triangle1Normal
 
-            let triangle2Normal = Vector3(terrain.Height x (z + 1) - terrain.Height (x + 1) (z + 1),
-                                          1.0f,
-                                          terrain.Height (x + 1) (z + 1) - terrain.Height (x + 1) z)
+            let triangle2Normal = Vector3.Cross(topLeft - topRight, topLeft - bottomRight)
             triangle2Normal.Normalize()
             normals.[x + 1, z] <- normals.[x + 1, z] + triangle2Normal
             normals.[x, z + 1] <- normals.[x, z + 1] + triangle2Normal
             normals.[x + 1, z + 1] <- normals.[x + 1, z + 1] + triangle2Normal
+    for x = 0 to terrain.Size do
+        for z = 0 to terrain.Size do
+            normals.[x, z].Normalize()
     normals
 
 let GetVertices (terrain:Terrain) =
