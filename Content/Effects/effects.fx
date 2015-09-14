@@ -79,10 +79,10 @@ float Perlin2D(float2 pIn)
 		float2 posAB = posAA + float2(0.0, 1.0);
 		float2 posBB = posAA + float2(1.0, 1.0);
 
-		float2 colAA = tex2D(RandomTextureSampler2D, posAA / xPerlinSize2D) * 2.0 - 1.0;
-		float2 colBA = tex2D(RandomTextureSampler2D, posBA / xPerlinSize2D) * 2.0 - 1.0;
-		float2 colAB = tex2D(RandomTextureSampler2D, posAB / xPerlinSize2D) * 2.0 - 1.0;
-		float2 colBB = tex2D(RandomTextureSampler2D, posBB / xPerlinSize2D) * 2.0 - 1.0;
+		float2 colAA = tex2D(RandomTextureSampler2D, posAA / xPerlinSize2D).xy * 2.0 - 1.0;
+		float2 colBA = tex2D(RandomTextureSampler2D, posBA / xPerlinSize2D).xy * 2.0 - 1.0;
+		float2 colAB = tex2D(RandomTextureSampler2D, posAB / xPerlinSize2D).xy * 2.0 - 1.0;
+		float2 colBB = tex2D(RandomTextureSampler2D, posBB / xPerlinSize2D).xy * 2.0 - 1.0;
 
 		float sAA = mul(colAA, p - posAA);
 	float sBA = mul(colBA, p - posBA);
@@ -112,14 +112,14 @@ float Perlin3D(float3 pIn)
 		float3 posABB = posAAA + float3(0.0, 1.0, 1.0);
 		float3 posBBB = posAAA + float3(1.0, 1.0, 1.0);
 
-		float3 colAAA = tex3D(RandomTextureSampler3D, posAAA / xPerlinSize3D) * 2.0 - 1.0;
-		float3 colBAA = tex3D(RandomTextureSampler3D, posBAA / xPerlinSize3D) * 2.0 - 1.0;
-		float3 colABA = tex3D(RandomTextureSampler3D, posABA / xPerlinSize3D) * 2.0 - 1.0;
-		float3 colBBA = tex3D(RandomTextureSampler3D, posBBA / xPerlinSize3D) * 2.0 - 1.0;
-		float3 colAAB = tex3D(RandomTextureSampler3D, posAAB / xPerlinSize3D) * 2.0 - 1.0;
-		float3 colBAB = tex3D(RandomTextureSampler3D, posBAB / xPerlinSize3D) * 2.0 - 1.0;
-		float3 colABB = tex3D(RandomTextureSampler3D, posABB / xPerlinSize3D) * 2.0 - 1.0;
-		float3 colBBB = tex3D(RandomTextureSampler3D, posBBB / xPerlinSize3D) * 2.0 - 1.0;
+		float3 colAAA = tex3D(RandomTextureSampler3D, posAAA / xPerlinSize3D).xyz * 2.0 - 1.0;
+		float3 colBAA = tex3D(RandomTextureSampler3D, posBAA / xPerlinSize3D).xyz * 2.0 - 1.0;
+		float3 colABA = tex3D(RandomTextureSampler3D, posABA / xPerlinSize3D).xyz * 2.0 - 1.0;
+		float3 colBBA = tex3D(RandomTextureSampler3D, posBBA / xPerlinSize3D).xyz * 2.0 - 1.0;
+		float3 colAAB = tex3D(RandomTextureSampler3D, posAAB / xPerlinSize3D).xyz * 2.0 - 1.0;
+		float3 colBAB = tex3D(RandomTextureSampler3D, posBAB / xPerlinSize3D).xyz * 2.0 - 1.0;
+		float3 colABB = tex3D(RandomTextureSampler3D, posABB / xPerlinSize3D).xyz * 2.0 - 1.0;
+		float3 colBBB = tex3D(RandomTextureSampler3D, posBBB / xPerlinSize3D).xyz * 2.0 - 1.0;
 
 	float sAAA = mul(colAAA, p - posAAA);
 	float sBAA = mul(colBAA, p - posBAA);
@@ -216,7 +216,7 @@ VertexToPixel TexturedVS(float4 inPos : SV_POSITION, float3 inNormal : NORMAL, f
 	Output.Position = mul(inPos, preWorldViewProjection);
 	Output.TextureCoords = inTexCoords;
 
-	float3 Normal = normalize(mul(normalize(inNormal), xWorld));
+	float3 Normal = normalize(mul(float4(normalize(inNormal), 0.0), xWorld)).xyz;
 	Output.LightingFactor = 1;
 	if (xEnableLighting)
 		Output.LightingFactor = dot(Normal, -xLightDirection);
@@ -255,7 +255,7 @@ VertexToPixel TexturedClippedVS(float4 inPos : SV_POSITION, float3 inNormal : NO
 	Output.Position = mul(inPos, preWorldViewProjection);
 	Output.TextureCoords = inTexCoords;
 
-	float3 Normal = normalize(mul(normalize(inNormal), xWorld));
+	float3 Normal = normalize(mul(float4(normalize(inNormal), 0.0), xWorld)).xyz;
 	Output.LightingFactor = 1;
 	if (xEnableLighting)
 		Output.LightingFactor = dot(Normal, -xLightDirection);
@@ -299,7 +299,7 @@ struct WVertexToPixel
 	float4 ReflectionMapSamplingPos    : TEXCOORD1;
 	float3 BumpMapSamplingPos        : TEXCOORD2;
 	float4 RefractionMapSamplingPos : TEXCOORD3;
-	float4 Position3D                : TEXCOORD4;
+	float3 Position3D                : TEXCOORD4;
 };
 
 struct WPixelToFrame
@@ -322,16 +322,16 @@ WVertexToPixel WaterVS(float4 inPos : SV_POSITION, float2 inTex : TEXCOORD)
 	Output.BumpMapSamplingPos.y = xTime / 100.0f;
 	Output.ReflectionMapSamplingPos = mul(inPos, preWorldReflectionViewProjection);
 	Output.RefractionMapSamplingPos = mul(inPos, preWorldViewProjection);
-	Output.Position3D = mul(inPos, xWorld);
+	Output.Position3D = mul(inPos, xWorld).xyz;
 
 	return Output;
 }
 
 float PerlinWater(float3 pos)
 {
-	float3 offset1 = (0.1f, 0.6f, 0.3f);
-	float3 offset2 = (0.45f, 0.17f, 0.88f);
-	float3 offset3 = (0.83f, 0.44f, 0.09f);
+	float3 offset1 = float3(0.1f, 0.6f, 0.3f);
+	float3 offset2 = float3(0.45f, 0.17f, 0.88f);
+	float3 offset3 = float3(0.83f, 0.44f, 0.09f);
 	return 0.25f * Perlin3D(pos) + 0.25f * Perlin3D((pos + offset1) / 1.1f) + 0.25f * Perlin3D((pos + offset2) / 1.25f) + 0.25f * Perlin3D((pos + offset3) / 0.1f);
 }
 
@@ -436,29 +436,29 @@ VertexToPixel PointSpriteVS(float3 inPos: SV_POSITION, float2 inTexCoord : TEXCO
 {
 	VertexToPixel Output = (VertexToPixel)0;
 
-	float3 center = mul(inPos, xWorld);
-		float3 eyeVector = center - xCamPos;
+	float3 center = mul(float4(inPos, 0.0), xWorld).xyz;
+	float3 eyeVector = center - xCamPos;
 
-		float3 sideVector = cross(eyeVector, xCamUp);
-		sideVector = normalize(sideVector);
+	float3 sideVector = cross(eyeVector, xCamUp);
+	sideVector = normalize(sideVector);
 	float3 upVector = cross(sideVector, eyeVector);
-		upVector = normalize(upVector);
+	upVector = normalize(upVector);
 
 	float3 finalPosition = center;
-		finalPosition += (inTexCoord.x - 0.5f)*sideVector*0.5f*xPointSpriteSize;
+	finalPosition += (inTexCoord.x - 0.5f)*sideVector*0.5f*xPointSpriteSize;
 	finalPosition += (0.5f - inTexCoord.y)*upVector*0.5f*xPointSpriteSize;
 
 	float4 finalPosition4 = float4(finalPosition, 1);
 
-		float4x4 preViewProjection = mul(xView, xProjection);
-		Output.Position = mul(finalPosition4, preViewProjection);
+	float4x4 preViewProjection = mul(xView, xProjection);
+	Output.Position = mul(finalPosition4, preViewProjection);
 
 	Output.TextureCoords = inTexCoord;
 
 	return Output;
 }
 
-PixelToFrame PointSpritePS(VertexToPixel PSIn) : COLOR0
+PixelToFrame PointSpritePS(VertexToPixel PSIn)
 {
 	PixelToFrame Output = (PixelToFrame)0;
 

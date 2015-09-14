@@ -113,7 +113,7 @@ PixelToFrame SkyFromAtmospherePS(SkyFromAtmosphere_VertexToPixel PSInput)
 	PixelToFrame Output = (PixelToFrame)0;
 
 	float cos = dot(xLightDirection, PSInput.ViewDirection);
-	float miePhase = 1.5 * ((1.0 - xGSquared) / (2.0 + xGSquared)) * (1.0 + cos * cos) / pow(1.0 + xGSquared - 2.0 * xG * cos, 1.5);
+	float miePhase = 1.5 * ((1.0 - xGSquared) / (2.0 + xGSquared)) * (1.0 + cos * cos) / pow(abs(1.0 + xGSquared - 2.0 * xG * cos), 1.5);
 
 	Output.Color.rgb = PSInput.RayleighColour + miePhase * PSInput.MieColour;
 	
