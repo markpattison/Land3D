@@ -166,7 +166,7 @@ type LandGame() as _this =
 
         _this.DrawRefractionMap
         _this.DrawReflectionMap
-        do device.Clear(Color.CornflowerBlue)
+        do device.Clear(Color.Black)
         _this.DrawSkyDome view world
         _this.DrawTerrain view noClipPlane
         _this.DrawWater time
