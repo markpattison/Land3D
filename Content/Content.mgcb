@@ -63,3 +63,9 @@
 /processorParam:TextureFormat=Color
 /build:Textures/snow.dds
 
+#begin Effects/skyFromAtmosphere.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Effects/skyFromAtmosphere.fx
+

@@ -56,6 +56,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Effects\effects.fx" />
+    <Content Include="Effects\skyFromAtmosphere.fx" />
     <Content Include="Meshes\cloudMap.jpg" />
   </ItemGroup>
   <ItemGroup>

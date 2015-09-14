@@ -13,6 +13,7 @@ type LandGame() as _this =
     inherit Game()
     let graphics = new GraphicsDeviceManager(_this)
     let mutable effect = Unchecked.defaultof<Effect>
+    let mutable skyFromAtmosphere = Unchecked.defaultof<Effect>
     let mutable vertices = Unchecked.defaultof<VertexPositionNormalTexture[]>
     let mutable waterVertices = Unchecked.defaultof<VertexPositionTexture[]>
     let mutable debugVertices = Unchecked.defaultof<VertexPositionTexture[]>
@@ -63,6 +64,7 @@ type LandGame() as _this =
 
         grassTexture <- _this.Content.Load<Texture2D>("Textures/grass")
         effect <- _this.Content.Load<Effect>("Effects/effects")
+        skyFromAtmosphere <- _this.Content.Load<Effect>("Effects/skyFromAtmosphere")
 
         let dir = Vector3(0.0f, -0.5f, -1.0f)
         dir.Normalize()
@@ -76,7 +78,7 @@ type LandGame() as _this =
 
         windDirection <- Vector3(0.5f, 0.0f, 0.0f)
 
-        let halfSize = 0.5f * single terrain.Size
+        let waterSize = 5.0f * single terrain.Size
 
         let startPosition = Vector3(0.0f, 10.0f, -(single terrain.Size) / 2.0f)
 
@@ -87,13 +89,13 @@ type LandGame() as _this =
 
         waterVertices <-
             [|
-                VertexPositionTexture(Vector3(-halfSize, waterHeight, -halfSize), new Vector2(0.0f, 0.0f));
-                VertexPositionTexture(Vector3( halfSize, waterHeight, -halfSize), new Vector2(1.0f, 0.0f));
-                VertexPositionTexture(Vector3(-halfSize, waterHeight,  halfSize), new Vector2(0.0f, 1.0f));
+                VertexPositionTexture(Vector3(-waterSize, waterHeight, -waterSize), new Vector2(0.0f, 0.0f));
+                VertexPositionTexture(Vector3( waterSize, waterHeight, -waterSize), new Vector2(1.0f, 0.0f));
+                VertexPositionTexture(Vector3(-waterSize, waterHeight,  waterSize), new Vector2(0.0f, 1.0f));
 
-                VertexPositionTexture(Vector3( halfSize, waterHeight, -halfSize), new Vector2(1.0f, 0.0f));
-                VertexPositionTexture(Vector3( halfSize, waterHeight,  halfSize), new Vector2(1.0f, 1.0f));
-                VertexPositionTexture(Vector3(-halfSize, waterHeight,  halfSize), new Vector2(0.0f, 1.0f));
+                VertexPositionTexture(Vector3( waterSize, waterHeight, -waterSize), new Vector2(1.0f, 0.0f));
+                VertexPositionTexture(Vector3( waterSize, waterHeight,  waterSize), new Vector2(1.0f, 1.0f));
+                VertexPositionTexture(Vector3(-waterSize, waterHeight,  waterSize), new Vector2(0.0f, 1.0f));
             |]
 
 
@@ -110,7 +112,7 @@ type LandGame() as _this =
 
         cloudMap <- _this.Content.Load<Texture2D>("Meshes/cloudMap_0")
         skyDome <- _this.Content.Load<Model>("Meshes/dome")
-        skyDome.Meshes.[0].MeshParts.[0].Effect <- effect.Clone()
+        skyDome.Meshes.[0].MeshParts.[0].Effect <- skyFromAtmosphere.Clone()
 
         // perlin noise texture
 
@@ -236,17 +238,42 @@ type LandGame() as _this =
  
         let wMatrix = world * Matrix.CreateTranslation(0.0f, -0.3f, 0.0f) * Matrix.CreateScale(1000.0f) * Matrix.CreateTranslation(camera.Position)
 
+        let innerRadius = 1000000.0f
+        let outerRadius = innerRadius * 1.025f
+        let scale = 1.0f / (outerRadius - innerRadius)
+        let scaleDepth = 0.25f
+        let scaleOverScaleDepth = scale / scaleDepth
+
+        let kR = 0.0025f
+        let kM = 0.0010f
+        let eSun = 20.0f
+        let g = -0.99f
+        let wavelengths = Vector3(0.650f, 0.570f, 0.440f)
+        let invWavelengths = Vector3(wavelengths.X ** -4.0f, wavelengths.Y ** -4.0f, wavelengths.Z ** -4.0f)
+
         skyDome.Meshes |> Seq.iter
             (fun mesh ->
             mesh.Effects |> Seq.iter
                 (fun effect ->
                     let worldMatrix = modelTransforms.[mesh.ParentBone.Index] * wMatrix
-                    effect.CurrentTechnique <- effect.Techniques.["Textured"]
                     effect.Parameters.["xWorld"].SetValue(worldMatrix)
                     effect.Parameters.["xView"].SetValue(viewMatrix)
                     effect.Parameters.["xProjection"].SetValue(projection)
-                    effect.Parameters.["xTexture"].SetValue(cloudMap)
-                    effect.Parameters.["xEnableLighting"].SetValue(false)
+                    effect.Parameters.["xCameraPosition"].SetValue(camera.Position)
+                    effect.Parameters.["xLightDirection"].SetValue(lightDirection)
+                    effect.Parameters.["xInnerRadius"].SetValue(innerRadius)
+                    effect.Parameters.["xOuterRadius"].SetValue(outerRadius)
+                    effect.Parameters.["xOuterRadiusSquared"].SetValue(outerRadius * outerRadius)
+                    effect.Parameters.["xScale"].SetValue(scale)
+                    effect.Parameters.["xScaleDepth"].SetValue(scaleDepth)
+                    effect.Parameters.["xScaleOverScaleDepth"].SetValue(scaleOverScaleDepth)
+                    effect.Parameters.["xKrESun"].SetValue(kR * eSun)
+                    effect.Parameters.["xKmESun"].SetValue(kM * eSun)
+                    effect.Parameters.["xKr4Pi"].SetValue(kR * 4.0f * float32 Math.PI)
+                    effect.Parameters.["xKm4Pi"].SetValue(kM * 4.0f * float32 Math.PI)
+                    effect.Parameters.["xG"].SetValue(g)
+                    effect.Parameters.["xGSquared"].SetValue(g * g)
+                    effect.Parameters.["xInvWavelength4"].SetValue(invWavelengths)
                     mesh.Draw()
                 )
             )
