@@ -57,9 +57,13 @@
     <Compile Include="Terrain.fs" />
     <Compile Include="Input.fs" />
     <Compile Include="FreeCamera.fs" />
+    <Compile Include="Sphere.fs" />
     <Compile Include="LandGame.fs" />
     <Compile Include="Program.fs" />
     <Content Include="Content\Effects\effects.xnb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\Effects\groundFromAtmosphere.xnb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Content\Effects\skyFromAtmosphere.xnb">

@@ -14,6 +14,7 @@ type LandGame() as _this =
     let graphics = new GraphicsDeviceManager(_this)
     let mutable effect = Unchecked.defaultof<Effect>
     let mutable skyFromAtmosphere = Unchecked.defaultof<Effect>
+    let mutable groundFromAtmosphere = Unchecked.defaultof<Effect>
     let mutable vertices = Unchecked.defaultof<VertexPositionNormalTexture[]>
     let mutable waterVertices = Unchecked.defaultof<VertexPositionTexture[]>
     let mutable debugVertices = Unchecked.defaultof<VertexPositionTexture[]>
@@ -58,6 +59,7 @@ type LandGame() as _this =
         ()
 
     override _this.LoadContent() =
+        Sphere.Icosahedron |> ignore
         createTerrain
         world <- Matrix.Identity
         projection <- Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 1000.0f)
@@ -65,6 +67,7 @@ type LandGame() as _this =
         grassTexture <- _this.Content.Load<Texture2D>("Textures/grass")
         effect <- _this.Content.Load<Effect>("Effects/effects")
         skyFromAtmosphere <- _this.Content.Load<Effect>("Effects/skyFromAtmosphere")
+        groundFromAtmosphere <- _this.Content.Load<Effect>("Effects/groundFromAtmosphere")
 
         let dir = Vector3(0.0f, -0.5f, -1.0f)
         dir.Normalize()
@@ -146,7 +149,7 @@ type LandGame() as _this =
         let invUpVector = Vector3.Cross(camera.RightDirection, reflectionCameraLookAt - reflectionCameraAt)
         reflectionView <- Matrix.CreateLookAt(reflectionCameraAt, reflectionCameraLookAt, invUpVector)
 
-        lightDirection <- Vector3.Transform(lightDirection, Matrix.CreateRotationX(0.005f))
+        lightDirection <- Vector3.Transform(lightDirection, Matrix.CreateRotationX(0.003f))
 
         do base.Update(gameTime)
 
@@ -178,21 +181,46 @@ type LandGame() as _this =
         do base.Draw(gameTime)
 
     member _this.DrawTerrain (viewMatrix: Matrix) (clipPlane: Vector4) =
-        effect.CurrentTechnique <- effect.Techniques.["TexturedClipped"]
-        effect.Parameters.["xWorld"].SetValue(world)
-        effect.Parameters.["xView"].SetValue(viewMatrix)
-        effect.Parameters.["xProjection"].SetValue(projection)
-        effect.Parameters.["xLightDirection"].SetValue(lightDirection)
-        effect.Parameters.["xTexture"].SetValue(grassTexture)
-        effect.Parameters.["xClipPlane"].SetValue(clipPlane)
-        effect.Parameters.["xEnableLighting"].SetValue(true)
-        effect.Parameters.["xAmbient"].SetValue(0.5f)
+        let innerRadius = 1000000.0f
+        let outerRadius = innerRadius * 1.025f
+        let scale = 1.0f / (outerRadius - innerRadius)
+        let scaleDepth = 0.25f
+        let scaleOverScaleDepth = scale / scaleDepth
 
+        let kR = 0.0025f
+        let kM = 0.0010f
+        let eSun = 20.0f
+        let g = -0.95f
+        let wavelengths = Vector3(0.650f, 0.570f, 0.440f)
+        let invWavelengths = Vector3(wavelengths.X ** -4.0f, wavelengths.Y ** -4.0f, wavelengths.Z ** -4.0f)
+
+        groundFromAtmosphere.CurrentTechnique <- groundFromAtmosphere.Techniques.["GroundFromAtmosphere"]
+        groundFromAtmosphere.Parameters.["xWorld"].SetValue(world)
+        groundFromAtmosphere.Parameters.["xView"].SetValue(viewMatrix)
+        groundFromAtmosphere.Parameters.["xProjection"].SetValue(projection)
+        groundFromAtmosphere.Parameters.["xCameraPosition"].SetValue(camera.Position)
+        groundFromAtmosphere.Parameters.["xLightDirection"].SetValue(lightDirection)
+        groundFromAtmosphere.Parameters.["xTexture"].SetValue(grassTexture)
+        groundFromAtmosphere.Parameters.["xClipPlane"].SetValue(clipPlane)
+        groundFromAtmosphere.Parameters.["xAmbient"].SetValue(0.5f)
+        groundFromAtmosphere.Parameters.["xInnerRadius"].SetValue(innerRadius)
+        groundFromAtmosphere.Parameters.["xOuterRadius"].SetValue(outerRadius)
+        groundFromAtmosphere.Parameters.["xOuterRadiusSquared"].SetValue(outerRadius * outerRadius)
+        groundFromAtmosphere.Parameters.["xScale"].SetValue(scale)
+        groundFromAtmosphere.Parameters.["xScaleDepth"].SetValue(scaleDepth)
+        groundFromAtmosphere.Parameters.["xScaleOverScaleDepth"].SetValue(scaleOverScaleDepth)
+        groundFromAtmosphere.Parameters.["xKrESun"].SetValue(kR * eSun)
+        groundFromAtmosphere.Parameters.["xKmESun"].SetValue(kM * eSun)
+        groundFromAtmosphere.Parameters.["xKr4Pi"].SetValue(kR * 4.0f * float32 Math.PI)
+        groundFromAtmosphere.Parameters.["xKm4Pi"].SetValue(kM * 4.0f * float32 Math.PI)
+        groundFromAtmosphere.Parameters.["xG"].SetValue(g)
+        groundFromAtmosphere.Parameters.["xGSquared"].SetValue(g * g)
+        groundFromAtmosphere.Parameters.["xInvWavelength4"].SetValue(invWavelengths)
 //        let state = new RasterizerState()
 //        state.FillMode <- FillMode.WireFrame
 //        device.RasterizerState <- state
 
-        effect.CurrentTechnique.Passes |> Seq.iter
+        groundFromAtmosphere.CurrentTechnique.Passes |> Seq.iter
             (fun pass ->
                 pass.Apply()
                 device.DrawUserIndexedPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, vertices, 0, vertices.Length, indices, 0, indices.Length / 3)

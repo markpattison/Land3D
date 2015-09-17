@@ -34,6 +34,7 @@ struct SkyFromAtmosphere_VertexToPixel
 	float4 Position : SV_POSITION;
 	float3 RayleighColour : COLOR0;
 	float3 MieColour : COLOR1;
+	float3 Attenuation : COLOR2;
 	float3 ViewDirection : TEXCOORD0;
 };
 
@@ -86,7 +87,7 @@ SkyFromAtmosphere_VertexToPixel SkyFromAtmosphereVS(SkyFromAtmosphere_ToVertex V
 	float3 sampleRay = viewDirection * sampleLength;
 	float3 samplePoint = cameraInPlanetSpace + sampleRay * 0.5;
 	float3 accumulatedColour = float3(0.0, 0.0, 0.0);
-
+	float3 attenuate;
 	for (int i = 0; i < xSamples; i++)
 	{
 		float sampleHeight = length(samplePoint);
@@ -94,7 +95,7 @@ SkyFromAtmosphere_VertexToPixel SkyFromAtmosphereVS(SkyFromAtmosphere_ToVertex V
 		float lightAngle = -dot(xLightDirection, samplePoint) / sampleHeight;
 		float cameraAngle = dot(viewDirection, samplePoint) / sampleHeight;
 		float scatter = startOffset + depth * (scale(lightAngle) - scale(cameraAngle));
-		float3 attenuate = exp(-scatter * (xInvWavelength4 * xKr4Pi + xKm4Pi));
+		attenuate = exp(-scatter * (xInvWavelength4 * xKr4Pi + xKm4Pi));
 
 		accumulatedColour += attenuate * (depth * scaledLength);
 		samplePoint += sampleRay;
@@ -104,6 +105,7 @@ SkyFromAtmosphere_VertexToPixel SkyFromAtmosphereVS(SkyFromAtmosphere_ToVertex V
 	output.RayleighColour = accumulatedColour * (xInvWavelength4 * xKrESun);
 	output.MieColour = accumulatedColour * xKmESun;
 	output.ViewDirection = viewDirection;
+	output.Attenuation = attenuate;
 
 	return output;
 }
@@ -116,7 +118,7 @@ PixelToFrame SkyFromAtmospherePS(SkyFromAtmosphere_VertexToPixel PSInput)
 	float miePhase = 1.5 * ((1.0 - xGSquared) / (2.0 + xGSquared)) * (1.0 + cos * cos) / pow(abs(1.0 + xGSquared - 2.0 * xG * cos), 1.5);
 
 	Output.Color.rgb = PSInput.RayleighColour + miePhase * PSInput.MieColour;
-	
+
 	Output.Color.a = Output.Color.b;
 
 	return Output;

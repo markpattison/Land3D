@@ -69,3 +69,9 @@
 /processorParam:DebugMode=Auto
 /build:Effects/skyFromAtmosphere.fx
 
+#begin Effects/groundFromAtmosphere.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Effects/groundFromAtmosphere.fx
+
