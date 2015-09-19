@@ -149,7 +149,8 @@ type LandGame() as _this =
         let invUpVector = Vector3.Cross(camera.RightDirection, reflectionCameraLookAt - reflectionCameraAt)
         reflectionView <- Matrix.CreateLookAt(reflectionCameraAt, reflectionCameraLookAt, invUpVector)
 
-        lightDirection <- Vector3.Transform(lightDirection, Matrix.CreateRotationX(0.003f))
+        if input.PageDown then lightDirection <- Vector3.Transform(lightDirection, Matrix.CreateRotationX(0.003f))
+        if input.PageUp then lightDirection <- Vector3.Transform(lightDirection, Matrix.CreateRotationX(-0.003f))
 
         do base.Update(gameTime)
 
