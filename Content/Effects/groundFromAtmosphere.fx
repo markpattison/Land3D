@@ -81,12 +81,15 @@ GroundFromAtmosphere_VertexToPixel GroundFromAtmosphereVS(GroundFromAtmosphere_T
 
 	float3 viewDirection = normalize(vertexInPlanetSpace - cameraInPlanetSpace);
 	float distanceToVertex = length(vertexInPlanetSpace - cameraInPlanetSpace);
+	float vertexHeight = length(vertexInPlanetSpace);
 	float cameraHeight = length(cameraInPlanetSpace);
 	float startDepth = exp((xInnerRadius - cameraHeight) * xScaleOverScaleDepth);
 
-	float cameraAngle = dot(-viewDirection, vertexInPlanetSpace) / length(vertexInPlanetSpace);
-	float lightAngle = -dot(xLightDirection, vertexInPlanetSpace) / length(vertexInPlanetSpace);
-	float cameraScale = scale(cameraAngle);
+	float vertexHigher = (vertexHeight > cameraHeight) ? -1.0 : 1.0;
+
+	float cameraAngle = vertexHigher * dot(-viewDirection, vertexInPlanetSpace) / vertexHeight;
+	float lightAngle = -dot(xLightDirection, vertexInPlanetSpace) / vertexHeight;
+	float cameraScale = vertexHigher * scale(cameraAngle);
 	float lightScale = scale(lightAngle);
 	float cameraOffset = startDepth * cameraScale;
 	float totalScale = lightScale + cameraScale;
