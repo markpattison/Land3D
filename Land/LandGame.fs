@@ -38,8 +38,9 @@ type LandGame() as _this =
     let mutable input = Unchecked.defaultof<Input>
     let mutable originalMouseState = Unchecked.defaultof<MouseState>
     let mutable perlinTexture3D = Unchecked.defaultof<Texture3D>
-    do graphics.PreferredBackBufferWidth <- 800
-    do graphics.PreferredBackBufferHeight <- 600
+    do graphics.PreferredBackBufferWidth <- 1440
+    do graphics.PreferredBackBufferHeight <- 900
+    do graphics.IsFullScreen <- true
     do graphics.ApplyChanges()
     do base.Content.RootDirectory <- "Content"
 
@@ -182,7 +183,7 @@ type LandGame() as _this =
         do base.Draw(gameTime)
 
     member _this.DrawTerrain (viewMatrix: Matrix) (clipPlane: Vector4) =
-        let innerRadius = 1000000.0f
+        let innerRadius = 10000.0f
         let outerRadius = innerRadius * 1.025f
         let scale = 1.0f / (outerRadius - innerRadius)
         let scaleDepth = 0.25f
@@ -269,7 +270,7 @@ type LandGame() as _this =
  
         let wMatrix = world * Matrix.CreateTranslation(0.0f, -0.3f, 0.0f) * Matrix.CreateScale(1000.0f) * Matrix.CreateTranslation(camera.Position)
 
-        let innerRadius = 1000000.0f
+        let innerRadius = 10000.0f
         let outerRadius = innerRadius * 1.025f
         let scale = 1.0f / (outerRadius - innerRadius)
         let scaleDepth = 0.25f

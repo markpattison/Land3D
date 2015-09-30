@@ -54,7 +54,7 @@ struct PixelToFrame
 
 float scale(float cos)
 {
-	float x = 1.0 - max(cos, 0.0); // should just be 1.0 - cos, this is a hack until I can work out what's wrong with the attenuation
+	float x = 1.0 - cos;
 	return xScaleDepth * exp(-0.00287 + x * (0.459 + x * (3.83 + x  *(-6.80 + x * 5.25))));
 }
 
@@ -82,7 +82,7 @@ GroundFromAtmosphere_VertexToPixel GroundFromAtmosphereVS(GroundFromAtmosphere_T
 	float3 viewDirection = normalize(vertexInPlanetSpace - cameraInPlanetSpace);
 	float distanceToVertex = length(vertexInPlanetSpace - cameraInPlanetSpace);
 	float cameraHeight = length(cameraInPlanetSpace);
-	float startDepth = exp((xInnerRadius - cameraHeight) / xScaleDepth);
+	float startDepth = exp((xInnerRadius - cameraHeight) * xScaleOverScaleDepth);
 
 	float cameraAngle = dot(-viewDirection, vertexInPlanetSpace) / length(vertexInPlanetSpace);
 	float lightAngle = -dot(xLightDirection, vertexInPlanetSpace) / length(vertexInPlanetSpace);
@@ -109,8 +109,13 @@ GroundFromAtmosphere_VertexToPixel GroundFromAtmosphereVS(GroundFromAtmosphere_T
 		samplePoint += sampleRay;
 	}
 
+	float finalHeight = length(vertexInPlanetSpace);
+	float finalDepth = exp(xScaleOverScaleDepth * (xInnerRadius - finalHeight));
+	float finalScatter = finalDepth * totalScale - cameraOffset;
+	float3 finalAttenuate = exp(-finalScatter * (xInvWavelength4 * xKr4Pi + xKm4Pi));
+
 	output.ScatteringColour = accumulatedColour * (xInvWavelength4 * xKrESun + xKmESun);
-	output.Attenuation = attenuate;
+	output.Attenuation = finalAttenuate;
 
 	return output;
 }
@@ -129,7 +134,7 @@ PixelToFrame GroundFromAtmospherePS(GroundFromAtmosphere_VertexToPixel PSInput)
 	output.Color.rgb *= saturate(PSInput.LightingFactor) + xAmbient;
 	output.Color.rgb *= PSInput.Attenuation;
 	output.Color.rgb += PSInput.ScatteringColour;
-
+	
 	return output;
 }
 
