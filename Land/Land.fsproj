@@ -58,6 +58,7 @@
     <Compile Include="Input.fs" />
     <Compile Include="FreeCamera.fs" />
     <Compile Include="Sphere.fs" />
+    <Compile Include="Environment.fs" />
     <Compile Include="LandGame.fs" />
     <Compile Include="Program.fs" />
     <Content Include="Content\Effects\effects.xnb">
@@ -98,6 +99,8 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.Linq" />
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

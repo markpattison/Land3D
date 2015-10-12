@@ -8,11 +8,13 @@ open Microsoft.Xna.Framework.Graphics
 open FreeCamera
 open Input
 open Terrain
+open Environment
 
 type LandGame() as _this =
     inherit Game()
     let graphics = new GraphicsDeviceManager(_this)
     let mutable effect = Unchecked.defaultof<Effect>
+    let mutable environment = Unchecked.defaultof<Environment>
     let mutable skyFromAtmosphere = Unchecked.defaultof<Effect>
     let mutable groundFromAtmosphere = Unchecked.defaultof<Effect>
     let mutable vertices = Unchecked.defaultof<VertexPositionNormalTexture[]>
@@ -102,7 +104,6 @@ type LandGame() as _this =
                 VertexPositionTexture(Vector3(-waterSize, waterHeight,  waterSize), new Vector2(0.0f, 1.0f));
             |]
 
-
         debugVertices <-
             [|
                 VertexPositionTexture(Vector3(-0.9f, 0.5f, 0.0f), new Vector2(0.0f, 0.0f));
@@ -133,6 +134,21 @@ type LandGame() as _this =
         let randomVectors = Array.init (16 * 16 * 16) randomVectorColour
 
         perlinTexture3D.SetData<Color>(randomVectors);
+
+        environment <-
+        {
+            Atmosphere =
+            {
+                InnerRadius = 10000.0f;
+                OuterRadius = 10250.0f;
+                ScaleDepth = 0.25f;
+                KR = 0.0025f;
+                KM = 0.0010f;
+                ESun = 20.0f;
+                G = -0.95f;
+                Wavelengths = Vector3(0.650f, 0.570f, 0.440f);
+            };
+        }
 
     override _this.Update(gameTime) =
         let time = float32 gameTime.TotalGameTime.TotalSeconds
@@ -183,19 +199,6 @@ type LandGame() as _this =
         do base.Draw(gameTime)
 
     member _this.DrawTerrain (viewMatrix: Matrix) (clipPlane: Vector4) =
-        let innerRadius = 10000.0f
-        let outerRadius = innerRadius * 1.025f
-        let scale = 1.0f / (outerRadius - innerRadius)
-        let scaleDepth = 0.25f
-        let scaleOverScaleDepth = scale / scaleDepth
-
-        let kR = 0.0025f
-        let kM = 0.0010f
-        let eSun = 20.0f
-        let g = -0.95f
-        let wavelengths = Vector3(0.650f, 0.570f, 0.440f)
-        let invWavelengths = Vector3(wavelengths.X ** -4.0f, wavelengths.Y ** -4.0f, wavelengths.Z ** -4.0f)
-
         groundFromAtmosphere.CurrentTechnique <- groundFromAtmosphere.Techniques.["GroundFromAtmosphere"]
         groundFromAtmosphere.Parameters.["xWorld"].SetValue(world)
         groundFromAtmosphere.Parameters.["xView"].SetValue(viewMatrix)
@@ -205,19 +208,9 @@ type LandGame() as _this =
         groundFromAtmosphere.Parameters.["xTexture"].SetValue(grassTexture)
         groundFromAtmosphere.Parameters.["xClipPlane"].SetValue(clipPlane)
         groundFromAtmosphere.Parameters.["xAmbient"].SetValue(0.5f)
-        groundFromAtmosphere.Parameters.["xInnerRadius"].SetValue(innerRadius)
-        groundFromAtmosphere.Parameters.["xOuterRadius"].SetValue(outerRadius)
-        groundFromAtmosphere.Parameters.["xOuterRadiusSquared"].SetValue(outerRadius * outerRadius)
-        groundFromAtmosphere.Parameters.["xScale"].SetValue(scale)
-        groundFromAtmosphere.Parameters.["xScaleDepth"].SetValue(scaleDepth)
-        groundFromAtmosphere.Parameters.["xScaleOverScaleDepth"].SetValue(scaleOverScaleDepth)
-        groundFromAtmosphere.Parameters.["xKrESun"].SetValue(kR * eSun)
-        groundFromAtmosphere.Parameters.["xKmESun"].SetValue(kM * eSun)
-        groundFromAtmosphere.Parameters.["xKr4Pi"].SetValue(kR * 4.0f * float32 Math.PI)
-        groundFromAtmosphere.Parameters.["xKm4Pi"].SetValue(kM * 4.0f * float32 Math.PI)
-        groundFromAtmosphere.Parameters.["xG"].SetValue(g)
-        groundFromAtmosphere.Parameters.["xGSquared"].SetValue(g * g)
-        groundFromAtmosphere.Parameters.["xInvWavelength4"].SetValue(invWavelengths)
+
+        environment.Atmosphere.ApplyToEffect groundFromAtmosphere
+
 //        let state = new RasterizerState()
 //        state.FillMode <- FillMode.WireFrame
 //        device.RasterizerState <- state
@@ -270,19 +263,6 @@ type LandGame() as _this =
  
         let wMatrix = world * Matrix.CreateTranslation(0.0f, -0.3f, 0.0f) * Matrix.CreateScale(1000.0f) * Matrix.CreateTranslation(camera.Position)
 
-        let innerRadius = 10000.0f
-        let outerRadius = innerRadius * 1.025f
-        let scale = 1.0f / (outerRadius - innerRadius)
-        let scaleDepth = 0.25f
-        let scaleOverScaleDepth = scale / scaleDepth
-
-        let kR = 0.0025f
-        let kM = 0.0010f
-        let eSun = 20.0f
-        let g = -0.95f
-        let wavelengths = Vector3(0.650f, 0.570f, 0.440f)
-        let invWavelengths = Vector3(wavelengths.X ** -4.0f, wavelengths.Y ** -4.0f, wavelengths.Z ** -4.0f)
-
         skyDome.Meshes |> Seq.iter
             (fun mesh ->
             mesh.Effects |> Seq.iter
@@ -293,19 +273,9 @@ type LandGame() as _this =
                     effect.Parameters.["xProjection"].SetValue(projection)
                     effect.Parameters.["xCameraPosition"].SetValue(camera.Position)
                     effect.Parameters.["xLightDirection"].SetValue(lightDirection)
-                    effect.Parameters.["xInnerRadius"].SetValue(innerRadius)
-                    effect.Parameters.["xOuterRadius"].SetValue(outerRadius)
-                    effect.Parameters.["xOuterRadiusSquared"].SetValue(outerRadius * outerRadius)
-                    effect.Parameters.["xScale"].SetValue(scale)
-                    effect.Parameters.["xScaleDepth"].SetValue(scaleDepth)
-                    effect.Parameters.["xScaleOverScaleDepth"].SetValue(scaleOverScaleDepth)
-                    effect.Parameters.["xKrESun"].SetValue(kR * eSun)
-                    effect.Parameters.["xKmESun"].SetValue(kM * eSun)
-                    effect.Parameters.["xKr4Pi"].SetValue(kR * 4.0f * float32 Math.PI)
-                    effect.Parameters.["xKm4Pi"].SetValue(kM * 4.0f * float32 Math.PI)
-                    effect.Parameters.["xG"].SetValue(g)
-                    effect.Parameters.["xGSquared"].SetValue(g * g)
-                    effect.Parameters.["xInvWavelength4"].SetValue(invWavelengths)
+
+                    environment.Atmosphere.ApplyToEffect effect
+
                     mesh.Draw()
                 )
             )
