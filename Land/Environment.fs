@@ -40,7 +40,23 @@ type Atmosphere =
         effect.Parameters.["xGSquared"].SetValue(_this.GSquared)
         effect.Parameters.["xInvWavelength4"].SetValue(_this.Inverse4thPowerWavelengths)
 
+type Water =
+    {
+        WaterHeight: single;
+        WindDirection: Vector3;
+        WindForce: single;
+        WaveLength: single;
+        WaveHeight: single;
+    } with
+
+    member _this.ApplyToEffect (effect: Effect) =
+        effect.Parameters.["xWaveLength"].SetValue(_this.WaveLength)
+        effect.Parameters.["xWaveHeight"].SetValue(_this.WaveHeight)
+        effect.Parameters.["xWindForce"].SetValue(_this.WindForce)
+        effect.Parameters.["xWindDirection"].SetValue(_this.WindDirection)
+
 type Environment =
     {
-        Atmosphere: Atmosphere
+        Atmosphere: Atmosphere;
+        Water: Water;
     }

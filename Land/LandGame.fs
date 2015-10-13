@@ -29,11 +29,9 @@ type LandGame() as _this =
     let mutable terrain = Unchecked.defaultof<Terrain>
     let mutable grassTexture = Unchecked.defaultof<Texture2D>
     let mutable lightDirection = Unchecked.defaultof<Vector3>
-    let mutable waterHeight = Unchecked.defaultof<single>
     let mutable refractionRenderTarget = Unchecked.defaultof<RenderTarget2D>
     let mutable reflectionRenderTarget = Unchecked.defaultof<RenderTarget2D>
     let mutable noClipPlane = Unchecked.defaultof<Vector4>
-    let mutable windDirection = Unchecked.defaultof<Vector3>
     let mutable skyDome = Unchecked.defaultof<Model>
     let mutable cloudMap = Unchecked.defaultof<Texture2D>
     let mutable camera = Unchecked.defaultof<FreeCamera>
@@ -63,6 +61,30 @@ type LandGame() as _this =
 
     override _this.LoadContent() =
         Sphere.Icosahedron |> ignore
+
+        environment <-
+            {
+                Atmosphere =
+                    {
+                        InnerRadius = 10000.0f;
+                        OuterRadius = 10250.0f;
+                        ScaleDepth = 0.25f;
+                        KR = 0.0025f;
+                        KM = 0.0010f;
+                        ESun = 20.0f;
+                        G = -0.95f;
+                        Wavelengths = Vector3(0.650f, 0.570f, 0.440f);
+                    };
+                Water =
+                    {
+                        WaterHeight = 0.0f;
+                        WindDirection = Vector3(0.5f, 0.0f, 0.0f);
+                        WindForce = 0.0015f;
+                        WaveLength = 0.1f;
+                        WaveHeight = 0.2f;
+                    };
+            }
+
         createTerrain
         world <- Matrix.Identity
         projection <- Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 1000.0f)
@@ -76,13 +98,10 @@ type LandGame() as _this =
         dir.Normalize()
         lightDirection <- dir
 
-        waterHeight <- 0.0f
         let pp = device.PresentationParameters
         refractionRenderTarget <- new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, device.DisplayMode.Format, DepthFormat.Depth24)
         reflectionRenderTarget <- new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, device.DisplayMode.Format, DepthFormat.Depth24)
         noClipPlane <- Vector4.Zero
-
-        windDirection <- Vector3(0.5f, 0.0f, 0.0f)
 
         let waterSize = 5.0f * single terrain.Size
 
@@ -95,13 +114,13 @@ type LandGame() as _this =
 
         waterVertices <-
             [|
-                VertexPositionTexture(Vector3(-waterSize, waterHeight, -waterSize), new Vector2(0.0f, 0.0f));
-                VertexPositionTexture(Vector3( waterSize, waterHeight, -waterSize), new Vector2(1.0f, 0.0f));
-                VertexPositionTexture(Vector3(-waterSize, waterHeight,  waterSize), new Vector2(0.0f, 1.0f));
+                VertexPositionTexture(Vector3(-waterSize, environment.Water.WaterHeight, -waterSize), new Vector2(0.0f, 0.0f));
+                VertexPositionTexture(Vector3( waterSize, environment.Water.WaterHeight, -waterSize), new Vector2(1.0f, 0.0f));
+                VertexPositionTexture(Vector3(-waterSize, environment.Water.WaterHeight,  waterSize), new Vector2(0.0f, 1.0f));
 
-                VertexPositionTexture(Vector3( waterSize, waterHeight, -waterSize), new Vector2(1.0f, 0.0f));
-                VertexPositionTexture(Vector3( waterSize, waterHeight,  waterSize), new Vector2(1.0f, 1.0f));
-                VertexPositionTexture(Vector3(-waterSize, waterHeight,  waterSize), new Vector2(0.0f, 1.0f));
+                VertexPositionTexture(Vector3( waterSize, environment.Water.WaterHeight, -waterSize), new Vector2(1.0f, 0.0f));
+                VertexPositionTexture(Vector3( waterSize, environment.Water.WaterHeight,  waterSize), new Vector2(1.0f, 1.0f));
+                VertexPositionTexture(Vector3(-waterSize, environment.Water.WaterHeight,  waterSize), new Vector2(0.0f, 1.0f));
             |]
 
         debugVertices <-
@@ -135,20 +154,7 @@ type LandGame() as _this =
 
         perlinTexture3D.SetData<Color>(randomVectors);
 
-        environment <-
-        {
-            Atmosphere =
-            {
-                InnerRadius = 10000.0f;
-                OuterRadius = 10250.0f;
-                ScaleDepth = 0.25f;
-                KR = 0.0025f;
-                KM = 0.0010f;
-                ESun = 20.0f;
-                G = -0.95f;
-                Wavelengths = Vector3(0.650f, 0.570f, 0.440f);
-            };
-        }
+
 
     override _this.Update(gameTime) =
         let time = float32 gameTime.TotalGameTime.TotalSeconds
@@ -161,8 +167,8 @@ type LandGame() as _this =
 
         view <- camera.ViewMatrix
 
-        let reflectionCameraAt = Vector3(camera.Position.X, -camera.Position.Y + 2.0f * waterHeight, camera.Position.Z)
-        let reflectionCameraLookAt = Vector3(camera.LookAt.X, -camera.LookAt.Y + 2.0f * waterHeight, camera.LookAt.Z)
+        let reflectionCameraAt = Vector3(camera.Position.X, -camera.Position.Y + 2.0f * environment.Water.WaterHeight, camera.Position.Z)
+        let reflectionCameraLookAt = Vector3(camera.LookAt.X, -camera.LookAt.Y + 2.0f * environment.Water.WaterHeight, camera.LookAt.Z)
         let invUpVector = Vector3.Cross(camera.RightDirection, reflectionCameraLookAt - reflectionCameraAt)
         reflectionView <- Matrix.CreateLookAt(reflectionCameraAt, reflectionCameraLookAt, invUpVector)
 
@@ -172,14 +178,14 @@ type LandGame() as _this =
         do base.Update(gameTime)
 
     member _this.DrawRefractionMap =
-        let clipPlane = Vector4(Vector3.Down, waterHeight - 0.00001f)
+        let clipPlane = Vector4(Vector3.Down, environment.Water.WaterHeight - 0.00001f)
         device.SetRenderTarget(refractionRenderTarget)
         device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
         _this.DrawTerrain view clipPlane
         device.SetRenderTarget(null)
 
     member _this.DrawReflectionMap =
-        let clipPlane = Vector4(Vector3.Up, waterHeight + 0.00001f)
+        let clipPlane = Vector4(Vector3.Up, environment.Water.WaterHeight + 0.00001f)
         device.SetRenderTarget(reflectionRenderTarget)
         device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
         _this.DrawSkyDome reflectionView world
@@ -231,13 +237,11 @@ type LandGame() as _this =
         effect.Parameters.["xCamPos"].SetValue(camera.Position)
         effect.Parameters.["xReflectionMap"].SetValue(reflectionRenderTarget)
         effect.Parameters.["xRefractionMap"].SetValue(refractionRenderTarget)
-        effect.Parameters.["xWaveLength"].SetValue(0.1f)
-        effect.Parameters.["xWaveHeight"].SetValue(0.2f)
         effect.Parameters.["xTime"].SetValue(time)
-        effect.Parameters.["xWindForce"].SetValue(0.0015f)
-        effect.Parameters.["xWindDirection"].SetValue(windDirection)
         effect.Parameters.["xRandomTexture3D"].SetValue(perlinTexture3D)
         effect.Parameters.["xPerlinSize3D"].SetValue(15.0f)
+
+        environment.Water.ApplyToEffect effect
 
         effect.CurrentTechnique.Passes |> Seq.iter
             (fun pass ->
