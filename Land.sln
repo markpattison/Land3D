@@ -4,17 +4,41 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Land", "Land\Land.fsproj", "{EE6F2AD5-4C5B-451F-A63E-1415CB4495A7}"
-	ProjectSection(ProjectDependencies) = postProject
-		{1B1C3CF1-E686-4912-9139-9856B3BCE7C0} = {1B1C3CF1-E686-4912-9139-9856B3BCE7C0}
-	EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Content", "Content\Content.csproj", "{1B1C3CF1-E686-4912-9139-9856B3BCE7C0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{D2F286D4-0302-406B-8E09-E774E068B017}"
 	ProjectSection(SolutionItems) = preProject
 		.paket\paket.bootstrapper.exe = .paket\paket.bootstrapper.exe
 		paket.dependencies = paket.dependencies
 		paket.lock = paket.lock
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".FAKE", ".FAKE", "{28C069E5-F895-4E01-ABF0-B185A5E5BFE6}"
+	ProjectSection(SolutionItems) = preProject
+		build.bat = build.bat
+		build.fsx = build.fsx
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Content", "Content", "{A2C66E40-30FA-45DB-8A13-272A87C4E53D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Effects", "Effects", "{6D0FDD9D-48F9-4E76-A788-731FB3F6C33E}"
+	ProjectSection(SolutionItems) = preProject
+		content\Effects\effects.fx = content\Effects\effects.fx
+		content\Effects\groundFromAtmosphere.fx = content\Effects\groundFromAtmosphere.fx
+		content\Effects\skyFromAtmosphere.fx = content\Effects\skyFromAtmosphere.fx
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Meshes", "Meshes", "{B14EF28F-F9DC-4295-86AC-87FEA38DF39C}"
+	ProjectSection(SolutionItems) = preProject
+		content\Meshes\cloudMap.jpg = content\Meshes\cloudMap.jpg
+		content\Meshes\dome.x = content\Meshes\dome.x
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Textures", "Textures", "{A23A07CD-E5D3-4742-A29D-DF8A7AEF2528}"
+	ProjectSection(SolutionItems) = preProject
+		content\Textures\grass.dds = content\Textures\grass.dds
+		content\Textures\rock.dds = content\Textures\rock.dds
+		content\Textures\sand.dds = content\Textures\sand.dds
+		content\Textures\snow.dds = content\Textures\snow.dds
 	EndProjectSection
 EndProject
 Global
@@ -33,16 +57,13 @@ Global
 		{EE6F2AD5-4C5B-451F-A63E-1415CB4495A7}.Release|Any CPU.Build.0 = Release|Any CPU
 		{EE6F2AD5-4C5B-451F-A63E-1415CB4495A7}.Release|x86.ActiveCfg = Release|Any CPU
 		{EE6F2AD5-4C5B-451F-A63E-1415CB4495A7}.Release|x86.Build.0 = Release|Any CPU
-		{1B1C3CF1-E686-4912-9139-9856B3BCE7C0}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{1B1C3CF1-E686-4912-9139-9856B3BCE7C0}.Debug|Any CPU.Build.0 = Debug|x86
-		{1B1C3CF1-E686-4912-9139-9856B3BCE7C0}.Debug|x86.ActiveCfg = Debug|x86
-		{1B1C3CF1-E686-4912-9139-9856B3BCE7C0}.Debug|x86.Build.0 = Debug|x86
-		{1B1C3CF1-E686-4912-9139-9856B3BCE7C0}.Release|Any CPU.ActiveCfg = Release|x86
-		{1B1C3CF1-E686-4912-9139-9856B3BCE7C0}.Release|Any CPU.Build.0 = Release|x86
-		{1B1C3CF1-E686-4912-9139-9856B3BCE7C0}.Release|x86.ActiveCfg = Release|x86
-		{1B1C3CF1-E686-4912-9139-9856B3BCE7C0}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6D0FDD9D-48F9-4E76-A788-731FB3F6C33E} = {A2C66E40-30FA-45DB-8A13-272A87C4E53D}
+		{B14EF28F-F9DC-4295-86AC-87FEA38DF39C} = {A2C66E40-30FA-45DB-8A13-272A87C4E53D}
+		{A23A07CD-E5D3-4742-A29D-DF8A7AEF2528} = {A2C66E40-30FA-45DB-8A13-272A87C4E53D}
 	EndGlobalSection
 EndGlobal

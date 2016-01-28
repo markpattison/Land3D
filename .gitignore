@@ -162,3 +162,9 @@ $RECYCLE.BIN/
 
 # Paket
 .paket/paket.exe
+
+# FAKE
+.fake/
+
+# MonoGame content
+intermediateContent/
