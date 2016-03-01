@@ -5,6 +5,9 @@ open System
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
+open VertexPositionNormal
+open Sphere
+
 open FreeCamera
 open Input
 open Terrain
@@ -38,9 +41,11 @@ type LandGame() as _this =
     let mutable input = Unchecked.defaultof<Input>
     let mutable originalMouseState = Unchecked.defaultof<MouseState>
     let mutable perlinTexture3D = Unchecked.defaultof<Texture3D>
-    do graphics.PreferredBackBufferWidth <- 1440
-    do graphics.PreferredBackBufferHeight <- 900
-    do graphics.IsFullScreen <- true
+    let mutable sphereVertices = Unchecked.defaultof<VertexPositionNormal[]>
+    let mutable sphereIndices = Unchecked.defaultof<int[]>
+    do graphics.PreferredBackBufferWidth <- 600//1440
+    do graphics.PreferredBackBufferHeight <- 400 //900
+    do graphics.IsFullScreen <- false //true
     do graphics.ApplyChanges()
     do base.Content.RootDirectory <- "Content"
 
@@ -151,9 +156,11 @@ type LandGame() as _this =
             Color(v)
 
         let randomVectors = Array.init (16 * 16 * 16) randomVectorColour
+        let sphere = Sphere.Icosahedron
+        sphereVertices <- Sphere.getVertices OutwardFacing sphere
+        sphereIndices <- Sphere.getIndices OutwardFacing sphere
 
-        perlinTexture3D.SetData<Color>(randomVectors);
-
+        perlinTexture3D.SetData<Color>(randomVectors)
 
 
     override _this.Update(gameTime) =
@@ -200,6 +207,7 @@ type LandGame() as _this =
         do device.Clear(Color.Black)
         _this.DrawSkyDome view world
         _this.DrawTerrain view noClipPlane
+        _this.DrawSphere view
         _this.DrawWater time
         //_this.DrawDebug refractionRenderTarget
         do base.Draw(gameTime)
@@ -225,6 +233,25 @@ type LandGame() as _this =
             (fun pass ->
                 pass.Apply()
                 device.DrawUserIndexedPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, vertices, 0, vertices.Length, indices, 0, indices.Length / 3)
+            )
+
+    member _this.DrawSphere (viewMatrix: Matrix) =
+        let sphereWorld = Matrix.Multiply(Matrix.CreateTranslation(0.0f, 1.0f, 0.0f), Matrix.CreateScale(10.0f))
+        effect.CurrentTechnique <- effect.Techniques.["Coloured"]
+        effect.Parameters.["xWorld"].SetValue(sphereWorld)
+        effect.Parameters.["xView"].SetValue(viewMatrix)
+        effect.Parameters.["xProjection"].SetValue(projection)
+        effect.Parameters.["xLightDirection"].SetValue(lightDirection)
+        effect.Parameters.["xAmbient"].SetValue(0.5f)
+
+//        let state = new RasterizerState()
+//        state.FillMode <- FillMode.WireFrame
+//        device.RasterizerState <- state
+        
+        effect.CurrentTechnique.Passes |> Seq.iter
+            (fun pass ->
+                pass.Apply()
+                device.DrawUserIndexedPrimitives<VertexPositionNormal>(PrimitiveType.TriangleList, sphereVertices, 0, sphereVertices.Length, sphereIndices, 0, sphereIndices.Length / 3)
             )
 
     member _this.DrawWater time =

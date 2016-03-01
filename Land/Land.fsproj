@@ -10,8 +10,9 @@
     <RootNamespace>Land</RootNamespace>
     <AssemblyName>Land</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <TargetFSharpCoreVersion>4.3.1.0</TargetFSharpCoreVersion>
+    <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <Name>Land</Name>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -55,6 +56,7 @@
   <ItemGroup>
     <None Include="paket.references" />
     <Compile Include="EffectReader.fs" />
+    <Compile Include="VertexPositionNormal.fs" />
     <Compile Include="Terrain.fs" />
     <Compile Include="Input.fs" />
     <Compile Include="FreeCamera.fs" />
@@ -62,6 +64,9 @@
     <Compile Include="Environment.fs" />
     <Compile Include="LandGame.fs" />
     <Compile Include="Program.fs" />
+    <Content Include="App.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Content\Effects\effects.xnb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
