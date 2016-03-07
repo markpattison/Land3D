@@ -10,6 +10,7 @@ type Face = int * int * int
 type Sphere = { Vertices: Vector3 array; Edges: Edge array; Faces: Face array }
 
 type SphereOrientation = | InwardFacing | OutwardFacing
+type SphereNormals = | Flat | Smooth
 
 let Icosahedron =
     let tao = 1.0f / 1.61803399f
@@ -92,33 +93,71 @@ let Icosahedron =
 
     { Vertices = vertices; Edges = edges; Faces = faces }
 
-let getVertices orientation sphere =
+let getVerticesAndIndicesSmoothNormals orientation sphere =
     let factor =
         match orientation with
         | InwardFacing -> -1.0f
         | OutwardFacing -> 1.0f
-    sphere.Vertices
-    |> Array.map (fun vertex ->
-        let v = vertex
-        v.Normalize()
-        new VertexPositionNormal(v, v * factor))
+    let vertices =
+        sphere.Vertices
+        |> Array.map (fun vertex ->
+            let normal = vertex * factor
+            normal.Normalize()
+            new VertexPositionNormal(vertex, normal))
+    let indices =
+        sphere.Faces
+        |> Array.map (fun (e1, e2, e3) ->
+            let (v1, v2) = sphere.Edges.[e1]
+            let (v3, v4) = sphere.Edges.[e2]
+            let (v5, v6) = sphere.Edges.[e3]
+            let (dv1, dv2, dv3) =
+                match [ v1; v2; v3; v4; v5; v6 ] |> List.distinct with
+                | [ dv1; dv2; dv3 ] -> (dv1, dv2, dv3)
+                | _ -> failwith "must have 3 distinct vertices per face"
+            let (vert1, vert2, vert3) = (sphere.Vertices.[dv1], sphere.Vertices.[dv2], sphere.Vertices.[dv3])
+            let cross = Vector3.Cross(vert1 - vert2, sphere.Vertices.[dv1] - vert3)
+            let dot = Vector3.Dot(cross, vert1) * factor
+            if dot < 0.0f then [| dv1; dv2; dv3 |] else [| dv1; dv3; dv2 |])
+        |> Array.concat
+    (vertices, indices)
 
-let getIndices orientation sphere =
-    let vertices = sphere.Vertices
+let getVerticesAndIndicesFlatNormals orientation sphere =
     let factor =
         match orientation with
         | InwardFacing -> -1.0f
         | OutwardFacing -> 1.0f
-    sphere.Faces
-    |> Array.map (fun (e1, e2, e3) ->
-        let (v1, v2) = sphere.Edges.[e1]
-        let (v3, v4) = sphere.Edges.[e2]
-        let (v5, v6) = sphere.Edges.[e3]
-        let (dv1, dv2, dv3) =
-            match [ v1; v2; v3; v4; v5; v6 ] |> List.distinct with
-            | [ dv1; dv2; dv3 ] -> (dv1, dv2, dv3)
-            | _ -> failwith "must have 3 distinct vertices per face"
-        let cross = Vector3.Cross(vertices.[dv1] - vertices.[dv2], vertices.[dv1] - vertices.[dv3])
-        let dot = Vector3.Dot(cross, vertices.[dv1]) * factor
-        if dot < 0.0f then [| dv1; dv2; dv3 |] else [| dv1; dv3; dv2 |])
-    |> Array.concat
+    let indicesVertices =
+        sphere.Faces
+        |> Array.mapi (fun n (e1, e2, e3) ->
+            let (v1, v2) = sphere.Edges.[e1]
+            let (v3, v4) = sphere.Edges.[e2]
+            let (v5, v6) = sphere.Edges.[e3]
+            let (vert1, vert2, vert3) =
+                match [ v1; v2; v3; v4; v5; v6 ] |> List.distinct with
+                | [ dv1; dv2; dv3 ] -> (sphere.Vertices.[dv1], sphere.Vertices.[dv2], sphere.Vertices.[dv3])
+                | _ -> failwith "must have 3 distinct vertices per face"
+            let cross = Vector3.Cross(vert1 - vert2, vert1 - vert3)
+            let dot = Vector3.Dot(cross, vert1) * factor
+            cross.Normalize()
+            let offset = n * 3
+            if dot < 0.0f then
+                ([| offset; offset + 1; offset + 2 |],
+                    [|
+                        new VertexPositionNormal(vert1, -cross);
+                        new VertexPositionNormal(vert2, -cross);
+                        new VertexPositionNormal(vert3, -cross)
+                    |])
+            else
+                ([| offset; offset + 2; offset + 1 |],
+                    [|
+                        new VertexPositionNormal(vert1, cross);
+                        new VertexPositionNormal(vert2, cross);
+                        new VertexPositionNormal(vert3, cross)
+                    |]))
+    let (i, v) = Array.unzip indicesVertices
+    (Array.concat v, Array.concat i)
+
+let getVerticesAndIndices normals orientation sphere =
+    match normals with
+    | Smooth -> getVerticesAndIndicesSmoothNormals orientation sphere
+    | Flat -> getVerticesAndIndicesFlatNormals orientation sphere

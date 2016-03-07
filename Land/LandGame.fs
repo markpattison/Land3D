@@ -43,9 +43,9 @@ type LandGame() as _this =
     let mutable perlinTexture3D = Unchecked.defaultof<Texture3D>
     let mutable sphereVertices = Unchecked.defaultof<VertexPositionNormal[]>
     let mutable sphereIndices = Unchecked.defaultof<int[]>
-    do graphics.PreferredBackBufferWidth <- 600//1440
-    do graphics.PreferredBackBufferHeight <- 400 //900
-    do graphics.IsFullScreen <- false //true
+    do graphics.PreferredBackBufferWidth <- 800//1440
+    do graphics.PreferredBackBufferHeight <- 480//900
+    do graphics.IsFullScreen <- false
     do graphics.ApplyChanges()
     do base.Content.RootDirectory <- "Content"
 
@@ -157,8 +157,10 @@ type LandGame() as _this =
 
         let randomVectors = Array.init (16 * 16 * 16) randomVectorColour
         let sphere = Sphere.Icosahedron
-        sphereVertices <- Sphere.getVertices OutwardFacing sphere
-        sphereIndices <- Sphere.getIndices OutwardFacing sphere
+
+        let (sphereVerts, sphereInds) = Sphere.getVerticesAndIndices Flat OutwardFacing sphere
+        sphereVertices <- sphereVerts
+        sphereIndices <- sphereInds
 
         perlinTexture3D.SetData<Color>(randomVectors)
 
