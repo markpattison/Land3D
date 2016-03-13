@@ -156,9 +156,9 @@ type LandGame() as _this =
             Color(v)
 
         let randomVectors = Array.init (16 * 16 * 16) randomVectorColour
-        let sphere = Sphere.Icosahedron
+        let sphere = Sphere.create 3
 
-        let (sphereVerts, sphereInds) = Sphere.getVerticesAndIndices Flat OutwardFacing sphere
+        let (sphereVerts, sphereInds) = Sphere.getVerticesAndIndices Smooth OutwardFacing sphere
         sphereVertices <- sphereVerts
         sphereIndices <- sphereInds
 
@@ -191,6 +191,7 @@ type LandGame() as _this =
         device.SetRenderTarget(refractionRenderTarget)
         device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
         _this.DrawTerrain view clipPlane
+        _this.DrawSphere view
         device.SetRenderTarget(null)
 
     member _this.DrawReflectionMap =
@@ -199,6 +200,7 @@ type LandGame() as _this =
         device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
         _this.DrawSkyDome reflectionView world
         _this.DrawTerrain reflectionView clipPlane
+        _this.DrawSphere reflectionView
         device.SetRenderTarget(null)
 
     override _this.Draw(gameTime) =

@@ -21,6 +21,11 @@ let getOrientationFactor orientation =
 
 type SphereNormals = | Flat | Smooth
 
+let norm (v: Vertex) =
+    let v2 = v
+    v2.Normalize()
+    v2
+
 let Icosahedron =
     let tao = 1.0f / 1.61803399f
     let vertices =
@@ -38,6 +43,7 @@ let Icosahedron =
             Vector3(tao, 0.0f, -1.0f);
             Vector3(-tao, 0.0f, -1.0f)
         |]
+        |> Array.map norm
 
     let edges: Edge array =
         [|
@@ -115,6 +121,65 @@ let getThreeDistinctVertices (face: Face) orientationFactor =
     let dot = Vector3.Dot(cross, vertex1) * orientationFactor
     cross.Normalize()
     if dot < 0.0f then (vertex1, vertex2, vertex3, -cross) else (vertex1, vertex3, vertex2, cross)
+
+let getOrderedEdges (edge1, edge2) edgeNextTo =
+    let (v1, v2) = edge1
+    let (vn1, vn2) = edgeNextTo
+    if v1 = vn1 || v2 = vn1 || v1 = vn2 || v2 = vn2 then (edge1, edge2) else (edge2, edge1)
+
+let divide sphere =
+    let intermediateVertex (v1: Vertex) (v2: Vertex) =
+        let newVertex = 2.0f * (v1 + v2)
+        newVertex.Normalize()
+        newVertex
+    let edgesWithNewVertices: (Edge * Vertex) array =
+        sphere.Edges
+        |> Array.map (fun (v1, v2) -> ((v1, v2), intermediateVertex v1 v2))
+    let (_, newVertices) =
+        Array.unzip edgesWithNewVertices
+    let edgesNewVerticesDict = edgesWithNewVertices |> dict
+    let edgesWithNewEdges: (Edge * (Edge * Edge)) array =
+        sphere.Edges
+        |> Array.map (fun edge ->
+            let (v1, v2) = edge
+            let midVertex: Vertex = edgesNewVerticesDict.[edge]
+            (edge, ((v1, midVertex), (midVertex, v2))))
+    let edgesNewEdgesDict = edgesWithNewEdges |> dict
+    let (_, newEdgeEdges) = Array.unzip edgesWithNewEdges
+    let (allFaces', newFaceEdges') =
+        sphere.Faces
+        |> Array.map (fun (edge1, edge2, edge3) ->
+            let (newEdge1a, newEdge1b) = getOrderedEdges edgesNewEdgesDict.[edge1] edge3
+            let (newEdge2a, newEdge2b) = getOrderedEdges edgesNewEdgesDict.[edge2] edge1
+            let (newEdge3a, newEdge3b) = getOrderedEdges edgesNewEdgesDict.[edge3] edge2
+            let nv1 = edgesNewVerticesDict.[edge1]
+            let nv2 = edgesNewVerticesDict.[edge2]
+            let nv3 = edgesNewVerticesDict.[edge3]
+            let newFaceEdge1 = (nv1, nv3)
+            let newFaceEdge2 = (nv2, nv1)
+            let newFaceEdge3 = (nv3, nv2)
+            let faces =
+                [|
+                    (newEdge1a, newFaceEdge1, newEdge3b);
+                    (newEdge1b, newFaceEdge2, newEdge2a);
+                    (newEdge2b, newFaceEdge3, newEdge3a);
+                    (newFaceEdge1, newFaceEdge2, newFaceEdge3)
+                |]
+            (faces, [| newFaceEdge1; newFaceEdge2; newFaceEdge3 |]))
+        |> Array.unzip
+    let allFaces = allFaces' |> Array.concat
+    let newFaceEdges = newFaceEdges' |> Array.concat
+    let allVertices = Array.append sphere.Vertices newVertices
+    let allEdges =
+        newEdgeEdges
+        |> Array.map (fun (e1, e2) -> [|e1; e2|])
+        |> Array.concat
+        |> Array.append newFaceEdges
+    { Vertices = allVertices; Edges = allEdges; Faces = allFaces }
+
+let create levelOfDetail =
+    {1 .. levelOfDetail}
+    |> Seq.fold (fun sphere _ -> divide sphere) Icosahedron
 
 let getVerticesAndIndicesSmoothNormals orientation sphere =
     let factor = getOrientationFactor orientation
