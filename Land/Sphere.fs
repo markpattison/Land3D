@@ -3,15 +3,22 @@
 open Microsoft.Xna.Framework
 open VertexPositionNormal
 
-type VertexIndex = int
-type EdgeIndex = int
+type Vertex = Vector3
 
-type Edge = VertexIndex * VertexIndex
-type Face = EdgeIndex * EdgeIndex * EdgeIndex
+type Edge = Vertex * Vertex
+type Face = Edge * Edge * Edge
 
-type Sphere = { Vertices: Vector3 array; Edges: Edge array; Faces: Face array }
+type Sphere = { Vertices: Vertex array; Edges: Edge array; Faces: Face array }
 
-type SphereOrientation = | InwardFacing | OutwardFacing
+type SphereOrientation =
+    | InwardFacing
+    | OutwardFacing
+
+let getOrientationFactor orientation =
+    match orientation with
+    | InwardFacing -> -1.0f
+    | OutwardFacing -> 1.0f
+
 type SphereNormals = | Flat | Smooth
 
 let Icosahedron =
@@ -67,6 +74,7 @@ let Icosahedron =
             (8, 9);
             (10, 11)
         |]
+        |> Array.map (fun (vertexIndex1, vertexIndex2) -> (vertices.[vertexIndex1], vertices.[vertexIndex2]))
 
     let faces: Face array =
         [|
@@ -92,14 +100,24 @@ let Icosahedron =
             (24, 25, 29);
             (26, 27, 29);
         |]
+        |> Array.map (fun (edgeIndex1, edgeIndex2, edgeIndex3) -> (edges.[edgeIndex1], edges.[edgeIndex2], edges.[edgeIndex3]))
 
     { Vertices = vertices; Edges = edges; Faces = faces }
 
+let getThreeDistinctVertices (face: Face) orientationFactor =
+    let ((v1, v2), (v3, v4), (v5, v6)) = face
+    let distinctVertices = [ v1; v2; v3; v4; v5; v6 ] |> List.distinct
+    let (vertex1, vertex2, vertex3) =
+        match distinctVertices with
+        | [ dv1; dv2; dv3 ] -> (dv1, dv2, dv3)
+        | _ -> failwith "must have 3 distinct vertices per face"
+    let cross = Vector3.Cross(vertex1 - vertex2, vertex1 - vertex3)
+    let dot = Vector3.Dot(cross, vertex1) * orientationFactor
+    cross.Normalize()
+    if dot < 0.0f then (vertex1, vertex2, vertex3, -cross) else (vertex1, vertex3, vertex2, cross)
+
 let getVerticesAndIndicesSmoothNormals orientation sphere =
-    let factor =
-        match orientation with
-        | InwardFacing -> -1.0f
-        | OutwardFacing -> 1.0f
+    let factor = getOrientationFactor orientation
     let vertices =
         sphere.Vertices
         |> Array.map (fun vertex ->
@@ -108,56 +126,27 @@ let getVerticesAndIndicesSmoothNormals orientation sphere =
             new VertexPositionNormal(vertex, normal))
     let indices =
         sphere.Faces
-        |> Array.map (fun (e1, e2, e3) ->
-            let (v1, v2) = sphere.Edges.[e1]
-            let (v3, v4) = sphere.Edges.[e2]
-            let (v5, v6) = sphere.Edges.[e3]
-            let (dv1, dv2, dv3) =
-                match [ v1; v2; v3; v4; v5; v6 ] |> List.distinct with
-                | [ dv1; dv2; dv3 ] -> (dv1, dv2, dv3)
-                | _ -> failwith "must have 3 distinct vertices per face"
-            let (vert1, vert2, vert3) = (sphere.Vertices.[dv1], sphere.Vertices.[dv2], sphere.Vertices.[dv3])
-            let cross = Vector3.Cross(vert1 - vert2, sphere.Vertices.[dv1] - vert3)
-            let dot = Vector3.Dot(cross, vert1) * factor
-            if dot < 0.0f then [| dv1; dv2; dv3 |] else [| dv1; dv3; dv2 |])
+        |> Array.map (fun face ->
+            let (vertex1, vertex2, vertex3, _) = getThreeDistinctVertices face factor
+            [| vertex1; vertex2; vertex3 |])
         |> Array.concat
+        |> Array.map (fun vertex -> Array.findIndex (fun v -> v = vertex) sphere.Vertices)
     (vertices, indices)
 
 let getVerticesAndIndicesFlatNormals orientation sphere =
-    let factor =
-        match orientation with
-        | InwardFacing -> -1.0f
-        | OutwardFacing -> 1.0f
-    let indicesVertices =
+    let factor = getOrientationFactor orientation
+    let (vertices, indices) =
         sphere.Faces
-        |> Array.mapi (fun n (e1, e2, e3) ->
-            let (v1, v2) = sphere.Edges.[e1]
-            let (v3, v4) = sphere.Edges.[e2]
-            let (v5, v6) = sphere.Edges.[e3]
-            let (vert1, vert2, vert3) =
-                match [ v1; v2; v3; v4; v5; v6 ] |> List.distinct with
-                | [ dv1; dv2; dv3 ] -> (sphere.Vertices.[dv1], sphere.Vertices.[dv2], sphere.Vertices.[dv3])
-                | _ -> failwith "must have 3 distinct vertices per face"
-            let cross = Vector3.Cross(vert1 - vert2, vert1 - vert3)
-            let dot = Vector3.Dot(cross, vert1) * factor
-            cross.Normalize()
-            let offset = n * 3
-            if dot < 0.0f then
-                ([| offset; offset + 1; offset + 2 |],
-                    [|
-                        new VertexPositionNormal(vert1, -cross);
-                        new VertexPositionNormal(vert2, -cross);
-                        new VertexPositionNormal(vert3, -cross)
-                    |])
-            else
-                ([| offset; offset + 2; offset + 1 |],
-                    [|
-                        new VertexPositionNormal(vert1, cross);
-                        new VertexPositionNormal(vert2, cross);
-                        new VertexPositionNormal(vert3, cross)
-                    |]))
-    let (i, v) = Array.unzip indicesVertices
-    (Array.concat v, Array.concat i)
+        |> Array.mapi (fun n face ->
+            let (vertex1, vertex2, vertex3, cross) = getThreeDistinctVertices face factor
+            [|
+                (new VertexPositionNormal(vertex1, cross), 3 * n);
+                (new VertexPositionNormal(vertex2, cross), 3 * n + 1);
+                (new VertexPositionNormal(vertex3, cross), 3 * n + 2);
+            |])
+        |> Array.concat
+        |> Array.unzip
+    (vertices, indices)
 
 let getVerticesAndIndices normals orientation sphere =
     match normals with
