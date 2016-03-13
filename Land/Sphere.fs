@@ -1,11 +1,13 @@
 ﻿module Sphere
 
 open Microsoft.Xna.Framework
-open Microsoft.Xna.Framework.Graphics
 open VertexPositionNormal
 
-type Edge = int * int
-type Face = int * int * int
+type VertexIndex = int
+type EdgeIndex = int
+
+type Edge = VertexIndex * VertexIndex
+type Face = EdgeIndex * EdgeIndex * EdgeIndex
 
 type Sphere = { Vertices: Vector3 array; Edges: Edge array; Faces: Face array }
 
@@ -30,7 +32,7 @@ let Icosahedron =
             Vector3(-tao, 0.0f, -1.0f)
         |]
 
-    let edges =
+    let edges: Edge array =
         [|
             (0, 2);
             (0, 4);
@@ -66,7 +68,7 @@ let Icosahedron =
             (10, 11)
         |]
 
-    let faces =
+    let faces: Face array =
         [|
             (0, 3, 12);
             (0, 4, 13);
