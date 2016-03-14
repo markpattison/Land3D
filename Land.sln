@@ -28,10 +28,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Effects", "Effects", "{6D0F
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Meshes", "Meshes", "{B14EF28F-F9DC-4295-86AC-87FEA38DF39C}"
-	ProjectSection(SolutionItems) = preProject
-		content\Meshes\cloudMap.jpg = content\Meshes\cloudMap.jpg
-		content\Meshes\dome.x = content\Meshes\dome.x
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Textures", "Textures", "{A23A07CD-E5D3-4742-A29D-DF8A7AEF2528}"
 	ProjectSection(SolutionItems) = preProject

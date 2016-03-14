@@ -7,7 +7,6 @@ open Microsoft.Xna.Framework.Graphics
 
 open VertexPositionNormal
 open Sphere
-
 open FreeCamera
 open Input
 open Terrain
@@ -35,17 +34,15 @@ type LandGame() as _this =
     let mutable refractionRenderTarget = Unchecked.defaultof<RenderTarget2D>
     let mutable reflectionRenderTarget = Unchecked.defaultof<RenderTarget2D>
     let mutable noClipPlane = Unchecked.defaultof<Vector4>
-    let mutable skyDome = Unchecked.defaultof<Model>
-    let mutable cloudMap = Unchecked.defaultof<Texture2D>
     let mutable camera = Unchecked.defaultof<FreeCamera>
     let mutable input = Unchecked.defaultof<Input>
     let mutable originalMouseState = Unchecked.defaultof<MouseState>
     let mutable perlinTexture3D = Unchecked.defaultof<Texture3D>
     let mutable sphereVertices = Unchecked.defaultof<VertexPositionNormal[]>
     let mutable sphereIndices = Unchecked.defaultof<int[]>
-    do graphics.PreferredBackBufferWidth <- 800//1440
-    do graphics.PreferredBackBufferHeight <- 480//900
-    do graphics.IsFullScreen <- false
+    do graphics.PreferredBackBufferWidth <- 640 //1440
+    do graphics.PreferredBackBufferHeight <- 480 //900
+    do graphics.IsFullScreen <- false //true
     do graphics.ApplyChanges()
     do base.Content.RootDirectory <- "Content"
 
@@ -139,10 +136,6 @@ type LandGame() as _this =
                 VertexPositionTexture(Vector3(-0.5f, 0.9f, 0.0f), new Vector2(1.0f, 1.0f));
             |]
 
-        cloudMap <- _this.Content.Load<Texture2D>("Meshes/cloudMap_0")
-        skyDome <- _this.Content.Load<Model>("Meshes/dome")
-        skyDome.Meshes.[0].MeshParts.[0].Effect <- skyFromAtmosphere.Clone()
-
         // perlin noise texture
 
         perlinTexture3D <- new Texture3D(device, 16, 16, 16, false, SurfaceFormat.Color)
@@ -156,9 +149,9 @@ type LandGame() as _this =
             Color(v)
 
         let randomVectors = Array.init (16 * 16 * 16) randomVectorColour
-        let sphere = Sphere.create 3
+        let sphere = Sphere.create 4
 
-        let (sphereVerts, sphereInds) = Sphere.getVerticesAndIndices Smooth OutwardFacing sphere
+        let (sphereVerts, sphereInds) = Sphere.getVerticesAndIndices Smooth InwardFacing sphere
         sphereVertices <- sphereVerts
         sphereIndices <- sphereInds
 
@@ -191,7 +184,6 @@ type LandGame() as _this =
         device.SetRenderTarget(refractionRenderTarget)
         device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
         _this.DrawTerrain view clipPlane
-        _this.DrawSphere view
         device.SetRenderTarget(null)
 
     member _this.DrawReflectionMap =
@@ -200,7 +192,6 @@ type LandGame() as _this =
         device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
         _this.DrawSkyDome reflectionView world
         _this.DrawTerrain reflectionView clipPlane
-        _this.DrawSphere reflectionView
         device.SetRenderTarget(null)
 
     override _this.Draw(gameTime) =
@@ -211,7 +202,6 @@ type LandGame() as _this =
         do device.Clear(Color.Black)
         _this.DrawSkyDome view world
         _this.DrawTerrain view noClipPlane
-        _this.DrawSphere view
         _this.DrawWater time
         //_this.DrawDebug refractionRenderTarget
         do base.Draw(gameTime)
@@ -293,26 +283,20 @@ type LandGame() as _this =
     member _this.DrawSkyDome (viewMatrix: Matrix) (world: Matrix) =
         device.DepthStencilState <- DepthStencilState.DepthRead
 
-        let modelTransforms = Array.zeroCreate<Matrix> skyDome.Bones.Count
-        skyDome.CopyAbsoluteBoneTransformsTo(modelTransforms)
- 
-        let wMatrix = world * Matrix.CreateTranslation(0.0f, -0.3f, 0.0f) * Matrix.CreateScale(1000.0f) * Matrix.CreateTranslation(camera.Position)
+        let wMatrix = world * Matrix.CreateScale(500.0f) * Matrix.CreateTranslation(camera.Position)
 
-        skyDome.Meshes |> Seq.iter
-            (fun mesh ->
-            mesh.Effects |> Seq.iter
-                (fun effect ->
-                    let worldMatrix = modelTransforms.[mesh.ParentBone.Index] * wMatrix
-                    effect.Parameters.["xWorld"].SetValue(worldMatrix)
-                    effect.Parameters.["xView"].SetValue(viewMatrix)
-                    effect.Parameters.["xProjection"].SetValue(projection)
-                    effect.Parameters.["xCameraPosition"].SetValue(camera.Position)
-                    effect.Parameters.["xLightDirection"].SetValue(lightDirection)
+        skyFromAtmosphere.CurrentTechnique <- skyFromAtmosphere.Techniques.["SkyFromAtmosphere"]
+        skyFromAtmosphere.Parameters.["xWorld"].SetValue(wMatrix)
+        skyFromAtmosphere.Parameters.["xView"].SetValue(viewMatrix)
+        skyFromAtmosphere.Parameters.["xProjection"].SetValue(projection)
+        skyFromAtmosphere.Parameters.["xCameraPosition"].SetValue(camera.Position)
+        skyFromAtmosphere.Parameters.["xLightDirection"].SetValue(lightDirection)
 
-                    environment.Atmosphere.ApplyToEffect effect
+        environment.Atmosphere.ApplyToEffect skyFromAtmosphere
 
-                    mesh.Draw()
-                )
+        skyFromAtmosphere.CurrentTechnique.Passes |> Seq.iter
+            (fun pass ->
+                pass.Apply()
+                device.DrawUserIndexedPrimitives<VertexPositionNormal>(PrimitiveType.TriangleList, sphereVertices, 0, sphereVertices.Length, sphereIndices, 0, sphereIndices.Length / 3)
             )
-
         device.DepthStencilState <- DepthStencilState.Default
