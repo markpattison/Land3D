@@ -21,11 +21,6 @@ let getOrientationFactor orientation =
 
 type SphereNormals = | Flat | Smooth
 
-let norm (v: Vertex) =
-    let v2 = v
-    v2.Normalize()
-    v2
-
 let Icosahedron =
     let tao = 1.0f / 1.61803399f
     let vertices =
@@ -43,7 +38,7 @@ let Icosahedron =
             Vector3(tao, 0.0f, -1.0f);
             Vector3(-tao, 0.0f, -1.0f)
         |]
-        |> Array.map norm
+        |> Array.map Vector3.Normalize
 
     let edges: Edge array =
         [|
@@ -119,8 +114,8 @@ let getThreeDistinctVertices (face: Face) orientationFactor =
         | _ -> failwith "must have 3 distinct vertices per face"
     let cross = Vector3.Cross(vertex1 - vertex2, vertex1 - vertex3)
     let dot = Vector3.Dot(cross, vertex1) * orientationFactor
-    cross.Normalize()
-    if dot < 0.0f then (vertex1, vertex2, vertex3, -cross) else (vertex1, vertex3, vertex2, cross)
+    let normCross = Vector3.Normalize(cross)
+    if dot < 0.0f then (vertex1, vertex2, vertex3, -normCross) else (vertex1, vertex3, vertex2, normCross)
 
 let getOrderedEdges (edge1, edge2) edgeNextTo =
     let (v1, v2) = edge1
@@ -129,9 +124,7 @@ let getOrderedEdges (edge1, edge2) edgeNextTo =
 
 let divide sphere =
     let intermediateVertex (v1: Vertex) (v2: Vertex) =
-        let newVertex = 2.0f * (v1 + v2)
-        newVertex.Normalize()
-        newVertex
+        Vector3.Normalize(2.0f * (v1 + v2))
     let edgesWithNewVertices: (Edge * Vertex) array =
         sphere.Edges
         |> Array.map (fun (v1, v2) -> ((v1, v2), intermediateVertex v1 v2))
@@ -185,10 +178,7 @@ let getVerticesAndIndicesSmoothNormals orientation sphere =
     let factor = getOrientationFactor orientation
     let vertices =
         sphere.Vertices
-        |> Array.map (fun vertex ->
-            let normal = vertex * factor
-            normal.Normalize()
-            new VertexPositionNormal(vertex, normal))
+        |> Array.map (fun vertex -> new VertexPositionNormal(vertex, Vector3.Normalize(vertex * factor)))
     let indices =
         sphere.Faces
         |> Array.map (fun face ->
