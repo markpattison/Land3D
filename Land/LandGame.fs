@@ -28,7 +28,7 @@ type LandGame() as _this =
     let mutable projection = Unchecked.defaultof<Matrix>
     let mutable device = Unchecked.defaultof<GraphicsDevice>
     let mutable terrain = Unchecked.defaultof<Terrain>
-    let mutable grassTexture = Unchecked.defaultof<Texture2D>
+    let mutable textures = Unchecked.defaultof<Textures>
     let mutable lightDirection = Unchecked.defaultof<Vector3>
     let mutable refractionRenderTarget = Unchecked.defaultof<RenderTarget2D>
     let mutable reflectionRenderTarget = Unchecked.defaultof<RenderTarget2D>
@@ -61,38 +61,14 @@ type LandGame() as _this =
         ()
 
     override _this.LoadContent() =
-        Sphere.Icosahedron |> ignore
-
-        environment <-
-            {
-                Atmosphere =
-                    {
-                        InnerRadius = 10000.0f;
-                        OuterRadius = 10250.0f;
-                        ScaleDepth = 0.25f;
-                        KR = 0.0025f;
-                        KM = 0.0010f;
-                        ESun = 20.0f;
-                        G = -0.95f;
-                        Wavelengths = Vector3(0.650f, 0.570f, 0.440f);
-                    };
-                Water =
-                    {
-                        WaterHeight = 0.0f;
-                        WindDirection = Vector3(0.5f, 0.0f, 0.0f);
-                        WindForce = 0.0015f;
-                        WaveLength = 0.1f;
-                        WaveHeight = 0.2f;
-                    };
-            }
+        environment <- ContentLoader.loadEnvironment
 
         createTerrain
         world <- Matrix.Identity
         projection <- Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 1000.0f)
 
         effects <- ContentLoader.loadEffects _this
-
-        grassTexture <- _this.Content.Load<Texture2D>("Textures/grass")
+        textures <- ContentLoader.loadTextures _this
 
         let dir = Vector3(0.0f, -0.5f, -1.0f)
         dir.Normalize()
@@ -213,7 +189,7 @@ type LandGame() as _this =
         effect.Parameters.["xProjection"].SetValue(projection)
         effect.Parameters.["xCameraPosition"].SetValue(camera.Position)
         effect.Parameters.["xLightDirection"].SetValue(lightDirection)
-        effect.Parameters.["xTexture"].SetValue(grassTexture)
+        effect.Parameters.["xTexture"].SetValue(textures.Grass)
         effect.Parameters.["xClipPlane"].SetValue(clipPlane)
         effect.Parameters.["xAmbient"].SetValue(0.5f)
 
