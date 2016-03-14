@@ -62,6 +62,7 @@
     <Compile Include="FreeCamera.fs" />
     <Compile Include="Sphere.fs" />
     <Compile Include="Environment.fs" />
+    <Compile Include="ContentLoader.fs" />
     <Compile Include="LandGame.fs" />
     <Compile Include="Program.fs" />
     <Content Include="App.config">

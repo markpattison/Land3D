@@ -11,14 +11,13 @@ open FreeCamera
 open Input
 open Terrain
 open Environment
+open ContentLoader
 
 type LandGame() as _this =
     inherit Game()
     let graphics = new GraphicsDeviceManager(_this)
-    let mutable effect = Unchecked.defaultof<Effect>
+    let mutable effects = Unchecked.defaultof<Effects>
     let mutable environment = Unchecked.defaultof<Environment>
-    let mutable skyFromAtmosphere = Unchecked.defaultof<Effect>
-    let mutable groundFromAtmosphere = Unchecked.defaultof<Effect>
     let mutable vertices = Unchecked.defaultof<VertexPositionNormalTexture[]>
     let mutable waterVertices = Unchecked.defaultof<VertexPositionTexture[]>
     let mutable debugVertices = Unchecked.defaultof<VertexPositionTexture[]>
@@ -91,10 +90,9 @@ type LandGame() as _this =
         world <- Matrix.Identity
         projection <- Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 1000.0f)
 
+        effects <- ContentLoader.loadEffects _this
+
         grassTexture <- _this.Content.Load<Texture2D>("Textures/grass")
-        effect <- _this.Content.Load<Effect>("Effects/effects")
-        skyFromAtmosphere <- _this.Content.Load<Effect>("Effects/skyFromAtmosphere")
-        groundFromAtmosphere <- _this.Content.Load<Effect>("Effects/groundFromAtmosphere")
 
         let dir = Vector3(0.0f, -0.5f, -1.0f)
         dir.Normalize()
@@ -207,29 +205,33 @@ type LandGame() as _this =
         do base.Draw(gameTime)
 
     member _this.DrawTerrain (viewMatrix: Matrix) (clipPlane: Vector4) =
-        groundFromAtmosphere.CurrentTechnique <- groundFromAtmosphere.Techniques.["GroundFromAtmosphere"]
-        groundFromAtmosphere.Parameters.["xWorld"].SetValue(world)
-        groundFromAtmosphere.Parameters.["xView"].SetValue(viewMatrix)
-        groundFromAtmosphere.Parameters.["xProjection"].SetValue(projection)
-        groundFromAtmosphere.Parameters.["xCameraPosition"].SetValue(camera.Position)
-        groundFromAtmosphere.Parameters.["xLightDirection"].SetValue(lightDirection)
-        groundFromAtmosphere.Parameters.["xTexture"].SetValue(grassTexture)
-        groundFromAtmosphere.Parameters.["xClipPlane"].SetValue(clipPlane)
-        groundFromAtmosphere.Parameters.["xAmbient"].SetValue(0.5f)
+        let effect = effects.GroundFromAtmosphere
 
-        environment.Atmosphere.ApplyToEffect groundFromAtmosphere
+        effect.CurrentTechnique <- effect.Techniques.["GroundFromAtmosphere"]
+        effect.Parameters.["xWorld"].SetValue(world)
+        effect.Parameters.["xView"].SetValue(viewMatrix)
+        effect.Parameters.["xProjection"].SetValue(projection)
+        effect.Parameters.["xCameraPosition"].SetValue(camera.Position)
+        effect.Parameters.["xLightDirection"].SetValue(lightDirection)
+        effect.Parameters.["xTexture"].SetValue(grassTexture)
+        effect.Parameters.["xClipPlane"].SetValue(clipPlane)
+        effect.Parameters.["xAmbient"].SetValue(0.5f)
+
+        environment.Atmosphere.ApplyToEffect effect
 
 //        let state = new RasterizerState()
 //        state.FillMode <- FillMode.WireFrame
 //        device.RasterizerState <- state
 
-        groundFromAtmosphere.CurrentTechnique.Passes |> Seq.iter
+        effect.CurrentTechnique.Passes |> Seq.iter
             (fun pass ->
                 pass.Apply()
                 device.DrawUserIndexedPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, vertices, 0, vertices.Length, indices, 0, indices.Length / 3)
             )
 
     member _this.DrawSphere (viewMatrix: Matrix) =
+        let effect = effects.Effect
+
         let sphereWorld = Matrix.Multiply(Matrix.CreateTranslation(0.0f, 1.0f, 0.0f), Matrix.CreateScale(10.0f))
         effect.CurrentTechnique <- effect.Techniques.["Coloured"]
         effect.Parameters.["xWorld"].SetValue(sphereWorld)
@@ -237,10 +239,6 @@ type LandGame() as _this =
         effect.Parameters.["xProjection"].SetValue(projection)
         effect.Parameters.["xLightDirection"].SetValue(lightDirection)
         effect.Parameters.["xAmbient"].SetValue(0.5f)
-
-//        let state = new RasterizerState()
-//        state.FillMode <- FillMode.WireFrame
-//        device.RasterizerState <- state
         
         effect.CurrentTechnique.Passes |> Seq.iter
             (fun pass ->
@@ -249,6 +247,7 @@ type LandGame() as _this =
             )
 
     member _this.DrawWater time =
+        let effect = effects.Effect
         effect.CurrentTechnique <- effect.Techniques.["Water"]
         effect.Parameters.["xWorld"].SetValue(world)
         effect.Parameters.["xView"].SetValue(view)
@@ -271,6 +270,7 @@ type LandGame() as _this =
             )
 
     member _this.DrawDebug (texture: Texture2D) =
+        let effect = effects.Effect
         effect.CurrentTechnique <- effect.Techniques.["Debug"]
         effect.Parameters.["xDebugTexture"].SetValue(texture)
 
@@ -281,20 +281,21 @@ type LandGame() as _this =
             )
 
     member _this.DrawSkyDome (viewMatrix: Matrix) (world: Matrix) =
-        device.DepthStencilState <- DepthStencilState.DepthRead
+        let effect = effects.SkyFromAtmosphere
 
+        device.DepthStencilState <- DepthStencilState.DepthRead
         let wMatrix = world * Matrix.CreateScale(500.0f) * Matrix.CreateTranslation(camera.Position)
 
-        skyFromAtmosphere.CurrentTechnique <- skyFromAtmosphere.Techniques.["SkyFromAtmosphere"]
-        skyFromAtmosphere.Parameters.["xWorld"].SetValue(wMatrix)
-        skyFromAtmosphere.Parameters.["xView"].SetValue(viewMatrix)
-        skyFromAtmosphere.Parameters.["xProjection"].SetValue(projection)
-        skyFromAtmosphere.Parameters.["xCameraPosition"].SetValue(camera.Position)
-        skyFromAtmosphere.Parameters.["xLightDirection"].SetValue(lightDirection)
+        effect.CurrentTechnique <- effect.Techniques.["SkyFromAtmosphere"]
+        effect.Parameters.["xWorld"].SetValue(wMatrix)
+        effect.Parameters.["xView"].SetValue(viewMatrix)
+        effect.Parameters.["xProjection"].SetValue(projection)
+        effect.Parameters.["xCameraPosition"].SetValue(camera.Position)
+        effect.Parameters.["xLightDirection"].SetValue(lightDirection)
 
-        environment.Atmosphere.ApplyToEffect skyFromAtmosphere
+        environment.Atmosphere.ApplyToEffect effect
 
-        skyFromAtmosphere.CurrentTechnique.Passes |> Seq.iter
+        effect.CurrentTechnique.Passes |> Seq.iter
             (fun pass ->
                 pass.Apply()
                 device.DrawUserIndexedPrimitives<VertexPositionNormal>(PrimitiveType.TriangleList, sphereVertices, 0, sphereVertices.Length, sphereIndices, 0, sphereIndices.Length / 3)
