@@ -16,6 +16,7 @@ open ContentLoader
 type LandGame() as _this =
     inherit Game()
     let graphics = new GraphicsDeviceManager(_this)
+    let mutable spriteBatch = Unchecked.defaultof<SpriteBatch>
     let mutable effects = Unchecked.defaultof<Effects>
     let mutable environment = Unchecked.defaultof<Environment>
     let mutable vertices = Unchecked.defaultof<VertexPositionNormalTexture[]>
@@ -32,6 +33,7 @@ type LandGame() as _this =
     let mutable lightDirection = Unchecked.defaultof<Vector3>
     let mutable refractionRenderTarget = Unchecked.defaultof<RenderTarget2D>
     let mutable reflectionRenderTarget = Unchecked.defaultof<RenderTarget2D>
+    let mutable hdrRenderTarget = Unchecked.defaultof<RenderTarget2D>
     let mutable noClipPlane = Unchecked.defaultof<Vector4>
     let mutable camera = Unchecked.defaultof<FreeCamera>
     let mutable input = Unchecked.defaultof<Input>
@@ -75,11 +77,14 @@ type LandGame() as _this =
         lightDirection <- dir
 
         let pp = device.PresentationParameters
-        refractionRenderTarget <- new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, device.DisplayMode.Format, DepthFormat.Depth24)
-        reflectionRenderTarget <- new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, device.DisplayMode.Format, DepthFormat.Depth24)
+        refractionRenderTarget <- new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)
+        reflectionRenderTarget <- new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)
+        hdrRenderTarget <- new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)
         noClipPlane <- Vector4.Zero
 
-        let waterSize = 5.0f * single terrain.Size
+        spriteBatch <- new SpriteBatch(device)
+
+        let waterSize = 50.0f * single terrain.Size
 
         let startPosition = Vector3(0.0f, 10.0f, -(single terrain.Size) / 2.0f)
 
@@ -164,8 +169,8 @@ type LandGame() as _this =
         let clipPlane = Vector4(Vector3.Up, environment.Water.WaterHeight + 0.00001f)
         device.SetRenderTarget(reflectionRenderTarget)
         device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
-        _this.DrawSkyDome reflectionView world
         _this.DrawTerrain reflectionView clipPlane
+        _this.DrawSkyDome reflectionView world
         device.SetRenderTarget(null)
 
     override _this.Draw(gameTime) =
@@ -173,11 +178,28 @@ type LandGame() as _this =
 
         _this.DrawRefractionMap
         _this.DrawReflectionMap
+
+        device.SetRenderTarget(hdrRenderTarget)
+
         do device.Clear(Color.Black)
-        _this.DrawSkyDome view world
         _this.DrawTerrain view noClipPlane
         _this.DrawWater time
-        //_this.DrawDebug refractionRenderTarget
+        _this.DrawSkyDome view world
+        _this.DrawDebug reflectionRenderTarget
+
+        device.SetRenderTarget(null)
+
+        let effect = effects.Hdr
+        effect.CurrentTechnique <- effect.Techniques.["Plain"]
+
+        spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, 
+            SamplerState.LinearClamp, DepthStencilState.Default, 
+            RasterizerState.CullNone, effect)
+ 
+        spriteBatch.Draw(hdrRenderTarget, new Rectangle(0, 0, device.PresentationParameters.BackBufferWidth, device.PresentationParameters.BackBufferHeight), Color.White);
+ 
+        spriteBatch.End();
+
         do base.Draw(gameTime)
 
     member _this.DrawTerrain (viewMatrix: Matrix) (clipPlane: Vector4) =

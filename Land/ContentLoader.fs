@@ -8,6 +8,7 @@ open Environment
 type Effects =
     {
         Effect: Effect;
+        Hdr: Effect;
         SkyFromAtmosphere: Effect;
         GroundFromAtmosphere: Effect
     }
@@ -20,6 +21,7 @@ type Textures =
 let loadEffects (game: Game) =
     {
         Effect = game.Content.Load<Effect>("Effects/effects")
+        Hdr = game.Content.Load<Effect>("Effects/hdr")
         SkyFromAtmosphere = game.Content.Load<Effect>("Effects/skyFromAtmosphere")
         GroundFromAtmosphere = game.Content.Load<Effect>("Effects/groundFromAtmosphere")
     }

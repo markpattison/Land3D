@@ -24,6 +24,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Effects", "Effects", "{6D0F
 	ProjectSection(SolutionItems) = preProject
 		content\Effects\effects.fx = content\Effects\effects.fx
 		content\Effects\groundFromAtmosphere.fx = content\Effects\groundFromAtmosphere.fx
+		Content\Effects\hdr.fx = Content\Effects\hdr.fx
 		content\Effects\skyFromAtmosphere.fx = content\Effects\skyFromAtmosphere.fx
 	EndProjectSection
 EndProject
