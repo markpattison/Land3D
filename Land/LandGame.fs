@@ -185,7 +185,7 @@ type LandGame() as _this =
         _this.DrawTerrain view noClipPlane
         _this.DrawWater time
         _this.DrawSkyDome view world
-        _this.DrawDebug reflectionRenderTarget
+       // _this.DrawDebug reflectionRenderTarget
 
         device.SetRenderTarget(null)
 
