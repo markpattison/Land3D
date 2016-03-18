@@ -35,8 +35,8 @@ let loadEnvironment =
     {
         Atmosphere =
             {
-                InnerRadius = 10000.0f;
-                OuterRadius = 10250.0f;
+                InnerRadius = 100000.0f;
+                OuterRadius = 102500.0f;
                 ScaleDepth = 0.25f;
                 KR = 0.0025f;
                 KM = 0.0010f;
@@ -46,7 +46,6 @@ let loadEnvironment =
             };
         Water =
             {
-                WaterHeight = 0.0f;
                 WindDirection = Vector3(0.5f, 0.0f, 0.0f);
                 WindForce = 0.0015f;
                 WaveLength = 0.1f;

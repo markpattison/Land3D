@@ -58,7 +58,6 @@ float OuterAtmosphereIntersection(float3 cameraInPlanetSpace, float3 viewDirecti
 	float det = b * b - 4.0 * a * c;
 
 	// biggest solution
-
 	return (-b + sqrt(det)) / (2.0 * a);
 }
 
@@ -75,17 +74,20 @@ SkyFromAtmosphere_VertexToPixel SkyFromAtmosphereVS(SkyFromAtmosphere_ToVertex V
 	float3 cameraInPlanetSpace = xCameraPosition + float3(0.0, xInnerRadius, 0.0);
 
 	float distanceToOuterAtmosphere = OuterAtmosphereIntersection(cameraInPlanetSpace, viewDirection);
+	float distanceToStart = (xCameraPosition.y >= 0.0 || viewDirection.y == 0.0) ? 0.0 : -xCameraPosition.y / viewDirection.y;
 	float3 intersectsOuterAtmosphere = xCameraPosition + distanceToOuterAtmosphere * viewDirection;
+	float3 startingPosition = xCameraPosition + distanceToStart * viewDirection;
+	float3 startingPositionInPlanetSpace = startingPosition + float3(0.0, xInnerRadius, 0.0);
 
-	float cameraHeight = length(cameraInPlanetSpace);
+	float cameraHeight = length(startingPositionInPlanetSpace);
 	float opticalDepth = exp(xScaleOverScaleDepth * (xInnerRadius - cameraHeight));
-	float startAngle = dot(viewDirection, cameraInPlanetSpace) / cameraHeight;
+	float startAngle = dot(viewDirection, startingPositionInPlanetSpace) / cameraHeight;
 	float startOffset = opticalDepth * scale(startAngle);
 
-	float sampleLength = distanceToOuterAtmosphere / float(xSamples);
+	float sampleLength = (distanceToOuterAtmosphere - distanceToStart) / float(xSamples);
 	float scaledLength = sampleLength * xScale;
 	float3 sampleRay = viewDirection * sampleLength;
-	float3 samplePoint = cameraInPlanetSpace + sampleRay * 0.5;
+	float3 samplePoint = startingPositionInPlanetSpace + sampleRay * 0.5;
 	float3 accumulatedColour = float3(0.0, 0.0, 0.0);
 	float3 attenuate;
 	for (int i = 0; i < xSamples; i++)
@@ -102,6 +104,7 @@ SkyFromAtmosphere_VertexToPixel SkyFromAtmosphereVS(SkyFromAtmosphere_ToVertex V
 	}
 
 	output.Position = mul(VSInput.Position, preWorldViewProjection);
+	output.Position.z = min(output.Position.z, output.Position.w);
 	output.RayleighColour = accumulatedColour * (xInvWavelength4 * xKrESun);
 	output.MieColour = accumulatedColour * xKmESun;
 	output.ViewDirection = viewDirection;

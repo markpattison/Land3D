@@ -10,8 +10,8 @@ open Sphere
 open FreeCamera
 open Input
 open Terrain
-open Environment
 open ContentLoader
+open Environment
 
 type LandGame() as _this =
     inherit Game()
@@ -67,7 +67,7 @@ type LandGame() as _this =
 
         createTerrain
         world <- Matrix.Identity
-        projection <- Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 1000.0f)
+        projection <- Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 5000.0f)
 
         effects <- ContentLoader.loadEffects _this
         textures <- ContentLoader.loadTextures _this
@@ -84,7 +84,7 @@ type LandGame() as _this =
 
         spriteBatch <- new SpriteBatch(device)
 
-        let waterSize = 50.0f * single terrain.Size
+        let waterSize = 3000.0f
 
         let startPosition = Vector3(0.0f, 10.0f, -(single terrain.Size) / 2.0f)
 
@@ -95,13 +95,13 @@ type LandGame() as _this =
 
         waterVertices <-
             [|
-                VertexPositionTexture(Vector3(-waterSize, environment.Water.WaterHeight, -waterSize), new Vector2(0.0f, 0.0f));
-                VertexPositionTexture(Vector3( waterSize, environment.Water.WaterHeight, -waterSize), new Vector2(1.0f, 0.0f));
-                VertexPositionTexture(Vector3(-waterSize, environment.Water.WaterHeight,  waterSize), new Vector2(0.0f, 1.0f));
+                VertexPositionTexture(Vector3(-waterSize, 0.0f, -waterSize), new Vector2(0.0f, 0.0f));
+                VertexPositionTexture(Vector3( waterSize, 0.0f, -waterSize), new Vector2(1.0f, 0.0f));
+                VertexPositionTexture(Vector3(-waterSize, 0.0f,  waterSize), new Vector2(0.0f, 1.0f));
 
-                VertexPositionTexture(Vector3( waterSize, environment.Water.WaterHeight, -waterSize), new Vector2(1.0f, 0.0f));
-                VertexPositionTexture(Vector3( waterSize, environment.Water.WaterHeight,  waterSize), new Vector2(1.0f, 1.0f));
-                VertexPositionTexture(Vector3(-waterSize, environment.Water.WaterHeight,  waterSize), new Vector2(0.0f, 1.0f));
+                VertexPositionTexture(Vector3( waterSize, 0.0f, -waterSize), new Vector2(1.0f, 0.0f));
+                VertexPositionTexture(Vector3( waterSize, 0.0f,  waterSize), new Vector2(1.0f, 1.0f));
+                VertexPositionTexture(Vector3(-waterSize, 0.0f,  waterSize), new Vector2(0.0f, 1.0f));
             |]
 
         debugVertices <-
@@ -148,8 +148,8 @@ type LandGame() as _this =
 
         view <- camera.ViewMatrix
 
-        let reflectionCameraAt = Vector3(camera.Position.X, -camera.Position.Y + 2.0f * environment.Water.WaterHeight, camera.Position.Z)
-        let reflectionCameraLookAt = Vector3(camera.LookAt.X, -camera.LookAt.Y + 2.0f * environment.Water.WaterHeight, camera.LookAt.Z)
+        let reflectionCameraAt = Vector3(camera.Position.X, -camera.Position.Y, camera.Position.Z)
+        let reflectionCameraLookAt = Vector3(camera.LookAt.X, -camera.LookAt.Y, camera.LookAt.Z)
         let invUpVector = Vector3.Cross(camera.RightDirection, reflectionCameraLookAt - reflectionCameraAt)
         reflectionView <- Matrix.CreateLookAt(reflectionCameraAt, reflectionCameraLookAt, invUpVector)
 
@@ -159,14 +159,14 @@ type LandGame() as _this =
         do base.Update(gameTime)
 
     member _this.DrawRefractionMap =
-        let clipPlane = Vector4(Vector3.Down, environment.Water.WaterHeight - 0.00001f)
+        let clipPlane = Vector4(Vector3.Down, -0.00001f)
         device.SetRenderTarget(refractionRenderTarget)
         device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
         _this.DrawTerrain view clipPlane
         device.SetRenderTarget(null)
 
     member _this.DrawReflectionMap =
-        let clipPlane = Vector4(Vector3.Up, environment.Water.WaterHeight + 0.00001f)
+        let clipPlane = Vector4(Vector3.Up, 0.00001f)
         device.SetRenderTarget(reflectionRenderTarget)
         device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
         _this.DrawTerrain reflectionView clipPlane
@@ -282,7 +282,7 @@ type LandGame() as _this =
         let effect = effects.SkyFromAtmosphere
 
         device.DepthStencilState <- DepthStencilState.DepthRead
-        let wMatrix = world * Matrix.CreateScale(500.0f) * Matrix.CreateTranslation(camera.Position)
+        let wMatrix = world * Matrix.CreateScale(20000.0f) * Matrix.CreateTranslation(camera.Position)
 
         effect.CurrentTechnique <- effect.Techniques.["SkyFromAtmosphere"]
         effect.Parameters.["xWorld"].SetValue(wMatrix)
