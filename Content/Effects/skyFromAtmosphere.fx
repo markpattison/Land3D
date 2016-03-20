@@ -45,7 +45,7 @@ struct PixelToFrame
 
 float scale(float cos)
 {
-	float x = 1.0 - cos;
+	float x = min(0.6, 1.0 - cos);
 	return xScaleDepth * exp(-0.00287 + x * (0.459 + x * (3.83 + x  *(-6.80 + x * 5.25))));
 }
 
@@ -104,7 +104,7 @@ SkyFromAtmosphere_VertexToPixel SkyFromAtmosphereVS(SkyFromAtmosphere_ToVertex V
 	}
 
 	output.Position = mul(VSInput.Position, preWorldViewProjection);
-	output.Position.z = min(output.Position.z, output.Position.w);
+	output.Position.z = min(output.Position.z, output.Position.w); // clamp depth to far clip distance
 	output.RayleighColour = accumulatedColour * (xInvWavelength4 * xKrESun);
 	output.MieColour = accumulatedColour * xKmESun;
 	output.ViewDirection = viewDirection;

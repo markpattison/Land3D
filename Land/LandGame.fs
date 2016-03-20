@@ -185,7 +185,7 @@ type LandGame() as _this =
         _this.DrawTerrain view noClipPlane
         _this.DrawWater time
         _this.DrawSkyDome view world
-       // _this.DrawDebug reflectionRenderTarget
+        _this.DrawDebug refractionRenderTarget
 
         device.SetRenderTarget(null)
 
@@ -216,10 +216,6 @@ type LandGame() as _this =
         effect.Parameters.["xAmbient"].SetValue(0.5f)
 
         environment.Atmosphere.ApplyToEffect effect
-
-//        let state = new RasterizerState()
-//        state.FillMode <- FillMode.WireFrame
-//        device.RasterizerState <- state
 
         effect.CurrentTechnique.Passes |> Seq.iter
             (fun pass ->
