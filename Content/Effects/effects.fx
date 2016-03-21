@@ -418,7 +418,14 @@ WPixelToFrame WaterPS(WVertexToPixel PSIn)
 	float4 refractiveColor = lerp(refractiveColorNoPerturb, refractiveColorPerturb, alpha);
 
 	float3 eyeVector = normalize(xCamPos - PSIn.Position3D);
-	float fresnelTerm = dot(eyeVector, normalVector);
+
+	// Schlick's approximation
+	float AirIOR = 1.0;
+	float WaterIOR = 1.33;
+	float R0 = (AirIOR - WaterIOR) / (AirIOR + WaterIOR);
+	R0 *= R0;
+
+	float fresnelTerm = R0 + (1.0 - R0) * pow(1.0 - dot(eyeVector, normalVector), 5.0);
 	
 	float3 reflectionVector = reflect(xLightDirection, normalVector);
 	float specular = max(0.0f, dot(normalize(reflectionVector), normalize(eyeVector)));
@@ -426,9 +433,9 @@ WPixelToFrame WaterPS(WVertexToPixel PSIn)
 	
 	float4 combinedColor = lerp(reflectiveColor, refractiveColor, fresnelTerm);
 	float4 dullColor = float4(0.3f, 0.35f, 0.45f, 1.0f);
-	Output.Color = lerp(combinedColor, dullColor, 0.4f);
-
+	Output.Color = lerp(combinedColor, dullColor, 0.0f);
 	Output.Color.rgb += specular;
+
 	//Output.Color = lerp(Output.Color, float4(400.0f * noise, 0.0f, 0.0f, 1.0f), 0.999f);
 	return Output;
 }

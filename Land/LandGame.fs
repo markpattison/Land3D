@@ -52,7 +52,7 @@ type LandGame() as _this =
         do terrain.DeformCircularFaults 300 2.0f 20.0f 100.0f
         do terrain.Normalize 0.5f 2.0f
         do terrain.Stretch 2.5f
-        do terrain.Normalize -5.0f 10.0f
+        do terrain.Normalize -10.0f 10.0f
         vertices <- GetVertices terrain
         indices <- GetIndices terrain.Size
 
@@ -185,7 +185,7 @@ type LandGame() as _this =
         _this.DrawTerrain view noClipPlane
         _this.DrawWater time
         _this.DrawSkyDome view world
-        _this.DrawDebug refractionRenderTarget
+        //_this.DrawDebug refractionRenderTarget
 
         device.SetRenderTarget(null)
 
@@ -214,6 +214,7 @@ type LandGame() as _this =
         effect.Parameters.["xTexture"].SetValue(textures.Grass)
         effect.Parameters.["xClipPlane"].SetValue(clipPlane)
         effect.Parameters.["xAmbient"].SetValue(0.5f)
+        effect.Parameters.["xWaterOpacity"].SetValue(0.05f)
 
         environment.Atmosphere.ApplyToEffect effect
 

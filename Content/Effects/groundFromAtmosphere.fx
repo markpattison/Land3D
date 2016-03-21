@@ -8,6 +8,7 @@ float3 xLightDirection;
 float4 xClipPlane;
 float xAmbient;
 float3 xCameraPosition;
+float xWaterOpacity;
 
 float xG;
 float xGSquared;
@@ -45,6 +46,7 @@ struct GroundFromAtmosphere_VertexToPixel
 	float2 TextureCoords : TEXCOORD1;
 	float ClipDistance : TEXCOORD2;
 	float Depth : TEXCOORD4;
+	float3 WorldPosition: TEXCOORD5;
 };
 
 struct PixelToFrame
@@ -66,6 +68,7 @@ GroundFromAtmosphere_VertexToPixel GroundFromAtmosphereVS(GroundFromAtmosphere_T
 	float4x4 preWorldViewProjection = mul(xWorld, preViewProjection);
 
 	float4 worldPosition = mul(VSInput.Position, xWorld);
+	output.WorldPosition = worldPosition;
 	output.Position = mul(VSInput.Position, preWorldViewProjection);
 	output.TextureCoords = VSInput.TexCoords;
 
@@ -138,6 +141,11 @@ PixelToFrame GroundFromAtmospherePS(GroundFromAtmosphere_VertexToPixel PSInput)
 	output.Color.rgb *= PSInput.Attenuation;
 	output.Color.rgb += PSInput.ScatteringColour;
 	
+	// water depth
+	float distanceUnderwater = 0.0;// PSInput.WorldPosition.y >= 0.0 ? 0.0 : length(PSInput.WorldPosition.xyz - xCameraPosition) * PSInput.WorldPosition.y / (PSInput.WorldPosition.y - xCameraPosition.y);
+	float4 dullColor = float4(0.0, 0.0, 0.0, 1.0);
+	output.Color = lerp(output.Color, dullColor, 1.0 - exp(-distanceUnderwater * xWaterOpacity));
+
 	return output;
 }
 
