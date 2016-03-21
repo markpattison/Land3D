@@ -142,7 +142,7 @@ PixelToFrame GroundFromAtmospherePS(GroundFromAtmosphere_VertexToPixel PSInput)
 	output.Color.rgb += PSInput.ScatteringColour;
 	
 	// water depth
-	float distanceUnderwater = 0.0;// PSInput.WorldPosition.y >= 0.0 ? 0.0 : length(PSInput.WorldPosition.xyz - xCameraPosition) * PSInput.WorldPosition.y / (PSInput.WorldPosition.y - xCameraPosition.y);
+	float distanceUnderwater = PSInput.WorldPosition.y >= 0.0 ? 0.0 : length(PSInput.WorldPosition.xyz - xCameraPosition) * PSInput.WorldPosition.y / (PSInput.WorldPosition.y - xCameraPosition.y);
 	float4 dullColor = float4(0.0, 0.0, 0.0, 1.0);
 	output.Color = lerp(output.Color, dullColor, 1.0 - exp(-distanceUnderwater * xWaterOpacity));
 

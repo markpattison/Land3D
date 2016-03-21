@@ -214,9 +214,9 @@ type LandGame() as _this =
         effect.Parameters.["xTexture"].SetValue(textures.Grass)
         effect.Parameters.["xClipPlane"].SetValue(clipPlane)
         effect.Parameters.["xAmbient"].SetValue(0.5f)
-        effect.Parameters.["xWaterOpacity"].SetValue(0.05f)
 
         environment.Atmosphere.ApplyToEffect effect
+        environment.Water.ApplyToGroundEffect effect
 
         effect.CurrentTechnique.Passes |> Seq.iter
             (fun pass ->
