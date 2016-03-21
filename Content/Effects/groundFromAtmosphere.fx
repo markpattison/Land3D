@@ -309,11 +309,13 @@ technique GroundFromAtmosphere
 
 struct WVertexToPixel
 {
-	float4 Position                 : SV_POSITION;
+	float4 Position                    : SV_POSITION;
 	float4 ReflectionMapSamplingPos    : TEXCOORD1;
-	float3 BumpMapSamplingPos        : TEXCOORD2;
-	float4 RefractionMapSamplingPos : TEXCOORD3;
-	float3 Position3D                : TEXCOORD4;
+	float3 BumpMapSamplingPos          : TEXCOORD2;
+	float4 RefractionMapSamplingPos    : TEXCOORD3;
+	float3 WorldPosition               : TEXCOORD4;
+	float3 ScatteringColour            : COLOR0;
+	float3 Attenuation                 : COLOR1;
 };
 
 struct WPixelToFrame
@@ -336,7 +338,14 @@ WVertexToPixel WaterVS(float4 inPos : SV_POSITION, float2 inTex : TEXCOORD)
 	Output.BumpMapSamplingPos.y = xTime / 100.0f;
 	Output.ReflectionMapSamplingPos = mul(inPos, preWorldReflectionViewProjection);
 	Output.RefractionMapSamplingPos = mul(inPos, preWorldViewProjection);
-	Output.Position3D = mul(inPos, xWorld).xyz;
+	float4 worldPosition = mul(inPos, xWorld);
+	Output.WorldPosition = worldPosition.xyz;
+
+	// need to use more triangles before enabling this...
+	//ScatteringResult scattering = Scattering(worldPosition.xyz);
+
+	//Output.ScatteringColour = scattering.ScatteringColour;
+	//Output.Attenuation = scattering.Attenuation;
 
 	return Output;
 }
@@ -387,7 +396,7 @@ WPixelToFrame WaterPS(WVertexToPixel PSIn)
 	float alpha = refractiveColorPerturb.a;
 	float4 refractiveColor = lerp(refractiveColorNoPerturb, refractiveColorPerturb, alpha);
 
-	float3 eyeVector = normalize(xCameraPosition - PSIn.Position3D);
+	float3 eyeVector = normalize(xCameraPosition - PSIn.WorldPosition);
 
 	// Schlick's approximation
 	float AirIOR = 1.0;
@@ -406,7 +415,8 @@ WPixelToFrame WaterPS(WVertexToPixel PSIn)
 	Output.Color = lerp(combinedColor, dullColor, 0.0f);
 	Output.Color.rgb += specular;
 
-	//Output.Color = lerp(Output.Color, float4(400.0f * noise, 0.0f, 0.0f, 1.0f), 0.999f);
+	//Output.Color.rgb += PSIn.ScatteringColour;
+
 	return Output;
 }
 
