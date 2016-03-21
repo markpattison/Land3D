@@ -45,7 +45,7 @@ struct PixelToFrame
 
 float scale(float cos)
 {
-	float x = min(0.6, 1.0 - cos);
+	float x = 1.0 - cos;
 	return xScaleDepth * exp(-0.00287 + x * (0.459 + x * (3.83 + x  *(-6.80 + x * 5.25))));
 }
 
