@@ -23,7 +23,6 @@ struct PixelToFrame
 
 //------- Constants --------
 float4x4 xView;
-float4x4 xReflectionView;
 float4x4 xProjection;
 float4x4 xWorld;
 float3 xLightDirection;
@@ -34,11 +33,6 @@ float3 xCamPos;
 float3 xCamUp;
 float xPointSpriteSize;
 float4 xClipPlane;
-float xWaveLength;
-float xWaveHeight;
-float xTime;
-float3 xWindDirection;
-float xWindForce;
 
 float xPerlinSize2D;
 float xPerlinSize3D;
@@ -48,17 +42,8 @@ float xPerlinSize3D;
 Texture xTexture;
 sampler TextureSampler = sampler_state { texture = <xTexture>; magfilter = LINEAR; minfilter = LINEAR; mipfilter = LINEAR; AddressU = mirror; AddressV = mirror; };
 
-Texture xReflectionMap;
-sampler ReflectionSampler = sampler_state { texture = <xReflectionMap>; magfilter = LINEAR; minfilter = LINEAR; mipfilter = LINEAR; AddressU = mirror; AddressV = mirror; };
-
-Texture xRefractionMap;
-sampler RefractionSampler = sampler_state { texture = <xRefractionMap>; magfilter = LINEAR; minfilter = LINEAR; mipfilter = LINEAR; AddressU = mirror; AddressV = mirror; };
-
 Texture xDebugTexture;
 sampler DebugTextureSampler = sampler_state { texture = <xDebugTexture>; magfilter = LINEAR; minfilter = LINEAR; mipfilter = LINEAR; AddressU = mirror; AddressV = mirror; };
-
-Texture xWaterBumpMap;
-sampler WaterBumpMapSampler = sampler_state { texture = <xWaterBumpMap>; magfilter = LINEAR; minfilter = LINEAR; mipfilter = LINEAR; AddressU = mirror; AddressV = mirror; };
 
 Texture xRandomTexture2D;
 sampler RandomTextureSampler2D = sampler_state { texture = <xRandomTexture2D>; AddressU = WRAP; AddressV = WRAP; };
