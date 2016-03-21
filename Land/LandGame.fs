@@ -242,14 +242,14 @@ type LandGame() as _this =
             )
 
     member _this.DrawWater time =
-        let effect = effects.Effect
+        let effect = effects.GroundFromAtmosphere
         effect.CurrentTechnique <- effect.Techniques.["Water"]
         effect.Parameters.["xWorld"].SetValue(world)
         effect.Parameters.["xView"].SetValue(view)
         effect.Parameters.["xReflectionView"].SetValue(reflectionView)
         effect.Parameters.["xProjection"].SetValue(projection)
         effect.Parameters.["xLightDirection"].SetValue(lightDirection)
-        effect.Parameters.["xCamPos"].SetValue(camera.Position)
+        effect.Parameters.["xCameraPosition"].SetValue(camera.Position)
         effect.Parameters.["xReflectionMap"].SetValue(reflectionRenderTarget)
         effect.Parameters.["xRefractionMap"].SetValue(refractionRenderTarget)
         effect.Parameters.["xTime"].SetValue(time)

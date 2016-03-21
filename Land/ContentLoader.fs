@@ -46,7 +46,7 @@ let loadEnvironment =
             };
         Water =
             {
-                WindDirection = Vector3(0.5f, 0.0f, 0.0f);
+                WindDirection = Vector2(0.0f, 1.0f);
                 WindForce = 0.0015f;
                 WaveLength = 0.1f;
                 WaveHeight = 0.2f;

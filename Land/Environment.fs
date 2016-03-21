@@ -42,7 +42,7 @@ type Atmosphere =
 
 type Water =
     {
-        WindDirection: Vector3;
+        WindDirection: Vector2;
         WindForce: single;
         WaveLength: single;
         WaveHeight: single;
