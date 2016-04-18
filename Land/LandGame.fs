@@ -12,6 +12,7 @@ open Input
 open Terrain
 open ContentLoader
 open Environment
+open Water
 
 type LandGame() as _this =
     inherit Game()
@@ -19,8 +20,8 @@ type LandGame() as _this =
     let mutable spriteBatch = Unchecked.defaultof<SpriteBatch>
     let mutable effects = Unchecked.defaultof<Effects>
     let mutable environment = Unchecked.defaultof<Environment>
+    let mutable water = Unchecked.defaultof<Water>
     let mutable vertices = Unchecked.defaultof<VertexPositionNormalTexture[]>
-    let mutable waterVertices = Unchecked.defaultof<VertexPositionTexture[]>
     let mutable debugVertices = Unchecked.defaultof<VertexPositionTexture[]>
     let mutable indices = Unchecked.defaultof<int[]>
     let mutable world = Unchecked.defaultof<Matrix>
@@ -41,9 +42,9 @@ type LandGame() as _this =
     let mutable perlinTexture3D = Unchecked.defaultof<Texture3D>
     let mutable sphereVertices = Unchecked.defaultof<VertexPositionNormal[]>
     let mutable sphereIndices = Unchecked.defaultof<int[]>
-    do graphics.PreferredBackBufferWidth <- 640 //1440
-    do graphics.PreferredBackBufferHeight <- 480 //900
-    do graphics.IsFullScreen <- false //true
+    do graphics.PreferredBackBufferWidth <- 600
+    do graphics.PreferredBackBufferHeight <- 400
+    do graphics.IsFullScreen <- false
     do graphics.ApplyChanges()
     do base.Content.RootDirectory <- "Content"
 
@@ -77,14 +78,10 @@ type LandGame() as _this =
         lightDirection <- dir
 
         let pp = device.PresentationParameters
-        refractionRenderTarget <- new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)
-        reflectionRenderTarget <- new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)
         hdrRenderTarget <- new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)
         noClipPlane <- Vector4.Zero
 
         spriteBatch <- new SpriteBatch(device)
-
-        let waterSize = 3000.0f
 
         let startPosition = Vector3(0.0f, 10.0f, -(single terrain.Size) / 2.0f)
 
@@ -92,17 +89,6 @@ type LandGame() as _this =
         Mouse.SetPosition(_this.Window.ClientBounds.Width / 2, _this.Window.ClientBounds.Height / 2)
         originalMouseState <- Mouse.GetState()
         input <- Input(Keyboard.GetState(), Keyboard.GetState(), Mouse.GetState(), Mouse.GetState(), _this.Window, originalMouseState, 0, 0)
-
-        waterVertices <-
-            [|
-                VertexPositionTexture(Vector3(-waterSize, 0.0f, -waterSize), new Vector2(0.0f, 0.0f));
-                VertexPositionTexture(Vector3( waterSize, 0.0f, -waterSize), new Vector2(1.0f, 0.0f));
-                VertexPositionTexture(Vector3(-waterSize, 0.0f,  waterSize), new Vector2(0.0f, 1.0f));
-
-                VertexPositionTexture(Vector3( waterSize, 0.0f, -waterSize), new Vector2(1.0f, 0.0f));
-                VertexPositionTexture(Vector3( waterSize, 0.0f,  waterSize), new Vector2(1.0f, 1.0f));
-                VertexPositionTexture(Vector3(-waterSize, 0.0f,  waterSize), new Vector2(0.0f, 1.0f));
-            |]
 
         debugVertices <-
             [|
@@ -136,6 +122,7 @@ type LandGame() as _this =
 
         perlinTexture3D.SetData<Color>(randomVectors)
 
+        water <- new Water(effects.GroundFromAtmosphere, perlinTexture3D, environment, device)
 
     override _this.Update(gameTime) =
         let time = float32 gameTime.TotalGameTime.TotalSeconds
@@ -158,32 +145,16 @@ type LandGame() as _this =
 
         do base.Update(gameTime)
 
-    member _this.DrawRefractionMap =
-        let clipPlane = Vector4(Vector3.Down, -0.00001f)
-        device.SetRenderTarget(refractionRenderTarget)
-        device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
-        _this.DrawTerrain view clipPlane
-        device.SetRenderTarget(null)
-
-    member _this.DrawReflectionMap =
-        let clipPlane = Vector4(Vector3.Up, 0.00001f)
-        device.SetRenderTarget(reflectionRenderTarget)
-        device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
-        _this.DrawTerrain reflectionView clipPlane
-        _this.DrawSkyDome reflectionView world
-        device.SetRenderTarget(null)
-
     override _this.Draw(gameTime) =
         let time = (single gameTime.TotalGameTime.TotalMilliseconds) / 100.0f
 
-        _this.DrawRefractionMap
-        _this.DrawReflectionMap
+        water.Prepare world view camera _this.DrawTerrain _this.DrawSkyDome
 
         device.SetRenderTarget(hdrRenderTarget)
 
         do device.Clear(Color.Black)
         _this.DrawTerrain view noClipPlane
-        _this.DrawWater time
+        water.DrawWater time world view projection lightDirection camera
         _this.DrawSkyDome view world
         //_this.DrawDebug refractionRenderTarget
 
@@ -239,29 +210,6 @@ type LandGame() as _this =
             (fun pass ->
                 pass.Apply()
                 device.DrawUserIndexedPrimitives<VertexPositionNormal>(PrimitiveType.TriangleList, sphereVertices, 0, sphereVertices.Length, sphereIndices, 0, sphereIndices.Length / 3)
-            )
-
-    member _this.DrawWater time =
-        let effect = effects.GroundFromAtmosphere
-        effect.CurrentTechnique <- effect.Techniques.["Water"]
-        effect.Parameters.["xWorld"].SetValue(world)
-        effect.Parameters.["xView"].SetValue(view)
-        effect.Parameters.["xReflectionView"].SetValue(reflectionView)
-        effect.Parameters.["xProjection"].SetValue(projection)
-        effect.Parameters.["xLightDirection"].SetValue(lightDirection)
-        effect.Parameters.["xCameraPosition"].SetValue(camera.Position)
-        effect.Parameters.["xReflectionMap"].SetValue(reflectionRenderTarget)
-        effect.Parameters.["xRefractionMap"].SetValue(refractionRenderTarget)
-        effect.Parameters.["xTime"].SetValue(time)
-        effect.Parameters.["xRandomTexture3D"].SetValue(perlinTexture3D)
-        effect.Parameters.["xPerlinSize3D"].SetValue(15.0f)
-
-        environment.Water.ApplyToEffect effect
-
-        effect.CurrentTechnique.Passes |> Seq.iter
-            (fun pass ->
-                pass.Apply()
-                device.DrawUserPrimitives<VertexPositionTexture>(PrimitiveType.TriangleList, waterVertices, 0, waterVertices.Length / 3)
             )
 
     member _this.DrawDebug (texture: Texture2D) =
