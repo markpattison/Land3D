@@ -114,13 +114,13 @@ type LandGame() as _this =
             Color(v)
 
         let randomVectors = Array.init (16 * 16 * 16) randomVectorColour
+        perlinTexture3D.SetData<Color>(randomVectors)
+
         let sphere = Sphere.create 4
 
         let (sphereVerts, sphereInds) = Sphere.getVerticesAndIndices Smooth InwardFacing sphere
         sphereVertices <- sphereVerts
         sphereIndices <- sphereInds
-
-        perlinTexture3D.SetData<Color>(randomVectors)
 
         water <- new Water(effects.GroundFromAtmosphere, perlinTexture3D, environment, device)
 

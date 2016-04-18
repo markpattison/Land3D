@@ -38,12 +38,14 @@ type Water(effect: Effect, perlinTexture3D: Texture3D, environment: Environment,
         drawSkyDome reflectionView world
         device.SetRenderTarget(null)
 
-    member _this.Prepare (world: Matrix) (view: Matrix) (camera: FreeCamera) drawTerrain drawSkyDome =
+    let calculateReflectionView (camera: FreeCamera) =
         let reflectionCameraAt = Vector3(camera.Position.X, -camera.Position.Y, camera.Position.Z)
         let reflectionCameraLookAt = Vector3(camera.LookAt.X, -camera.LookAt.Y, camera.LookAt.Z)
         let invUpVector = Vector3.Cross(camera.RightDirection, reflectionCameraLookAt - reflectionCameraAt)
-        reflectionView <- Matrix.CreateLookAt(reflectionCameraAt, reflectionCameraLookAt, invUpVector)
+        Matrix.CreateLookAt(reflectionCameraAt, reflectionCameraLookAt, invUpVector)
 
+    member _this.Prepare world view camera drawTerrain drawSkyDome =
+        reflectionView <- calculateReflectionView camera
         drawRefractionMap drawTerrain view
         drawReflectionMap drawTerrain drawSkyDome reflectionView world
 
