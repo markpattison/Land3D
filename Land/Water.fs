@@ -30,12 +30,12 @@ type Water(effect: Effect, perlinTexture3D: Texture3D, environment: Environment,
         drawTerrain view clipPlane
         device.SetRenderTarget(null)
 
-    let drawReflectionMap drawTerrain drawSkyDome reflectionView world  =
+    let drawReflectionMap drawTerrain drawSkyDome reflectionView =
         let clipPlane = Vector4(Vector3.Up, 0.00001f)
         device.SetRenderTarget(reflectionRenderTarget)
         device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
         drawTerrain reflectionView clipPlane
-        drawSkyDome reflectionView world
+        drawSkyDome reflectionView
         device.SetRenderTarget(null)
 
     let calculateReflectionView (camera: FreeCamera) =
@@ -44,10 +44,10 @@ type Water(effect: Effect, perlinTexture3D: Texture3D, environment: Environment,
         let invUpVector = Vector3.Cross(camera.RightDirection, reflectionCameraLookAt - reflectionCameraAt)
         Matrix.CreateLookAt(reflectionCameraAt, reflectionCameraLookAt, invUpVector)
 
-    member _this.Prepare world view camera drawTerrain drawSkyDome =
+    member _this.Prepare view camera drawTerrain drawSkyDome =
         reflectionView <- calculateReflectionView camera
         drawRefractionMap drawTerrain view
-        drawReflectionMap drawTerrain drawSkyDome reflectionView world
+        drawReflectionMap drawTerrain drawSkyDome reflectionView
 
     member _this.DrawWater (time: single) (world: Matrix) (view: Matrix) (projection: Matrix) (lightDirection: Vector3) (camera: FreeCamera) =
         effect.CurrentTechnique <- effect.Techniques.["Water"]
