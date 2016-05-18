@@ -3,7 +3,7 @@
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
-open Environment
+open EnvironmentParameters
 
 type Effects =
     {

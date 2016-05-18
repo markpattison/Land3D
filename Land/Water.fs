@@ -4,9 +4,9 @@ open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
 open FreeCamera
-open Environment
+open EnvironmentParameters
 
-type Water(effect: Effect, perlinTexture3D: Texture3D, environment: Environment, device: GraphicsDevice) as _this =
+type Water(effect: Effect, perlinTexture3D: Texture3D, environment: EnvironmentParameters, device: GraphicsDevice) as _this =
     let pp = device.PresentationParameters
     let refractionRenderTarget = new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)
     let reflectionRenderTarget = new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)

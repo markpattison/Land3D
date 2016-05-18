@@ -1,4 +1,4 @@
-﻿module Environment
+﻿module EnvironmentParameters
 
 open System
 open Microsoft.Xna.Framework
@@ -58,7 +58,7 @@ type Water =
     member _this.ApplyToGroundEffect (effect: Effect) =
         effect.Parameters.["xWaterOpacity"].SetValue(_this.Opacity)
 
-type Environment =
+type EnvironmentParameters =
     {
         Atmosphere: Atmosphere;
         Water: Water;

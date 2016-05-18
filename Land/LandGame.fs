@@ -11,7 +11,7 @@ open FreeCamera
 open Input
 open Terrain
 open ContentLoader
-open Environment
+open EnvironmentParameters
 open Water
 open Sky
 
@@ -20,7 +20,7 @@ type LandGame() as _this =
     let graphics = new GraphicsDeviceManager(_this)
     let mutable spriteBatch = Unchecked.defaultof<SpriteBatch>
     let mutable effects = Unchecked.defaultof<Effects>
-    let mutable environment = Unchecked.defaultof<Environment>
+    let mutable environment = Unchecked.defaultof<EnvironmentParameters>
     let mutable water = Unchecked.defaultof<Water>
     let mutable sky = Unchecked.defaultof<Sky>
     let mutable vertices = Unchecked.defaultof<VertexPositionNormalTexture[]>

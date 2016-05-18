@@ -5,10 +5,10 @@ open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 open VertexPositionNormal
 open Sphere
-open Environment
+open EnvironmentParameters
 open FreeCamera
 
-type Sky(effect: Effect, environment: Environment, device: GraphicsDevice) as _this =
+type Sky(effect: Effect, environment: EnvironmentParameters, device: GraphicsDevice) as _this =
     let skySphere = Sphere.create 4
     let (skySphereVertices, skySphereIndices) = Sphere.getVerticesAndIndices Smooth InwardFacing Concentrated skySphere
 
