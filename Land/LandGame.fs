@@ -40,6 +40,8 @@ type LandGame() as _this =
     let mutable input = Unchecked.defaultof<Input>
     let mutable originalMouseState = Unchecked.defaultof<MouseState>
     let mutable perlinTexture3D = Unchecked.defaultof<Texture3D>
+    let mutable skySphereVertices = Unchecked.defaultof<VertexPositionNormal[]>
+    let mutable skySphereIndices = Unchecked.defaultof<int[]>
     let mutable sphereVertices = Unchecked.defaultof<VertexPositionNormal[]>
     let mutable sphereIndices = Unchecked.defaultof<int[]>
     do graphics.PreferredBackBufferWidth <- 600
@@ -116,9 +118,15 @@ type LandGame() as _this =
         let randomVectors = Array.init (16 * 16 * 16) randomVectorColour
         perlinTexture3D.SetData<Color>(randomVectors)
 
-        let sphere = Sphere.create 4
+        let skySphere = Sphere.create 4
 
-        let (sphereVerts, sphereInds) = Sphere.getVerticesAndIndices Smooth InwardFacing sphere
+        let (skySphereVerts, skySphereInds) = Sphere.getVerticesAndIndices Smooth InwardFacing Concentrated skySphere
+        skySphereVertices <- skySphereVerts
+        skySphereIndices <- skySphereInds
+
+        let sphere = Sphere.create 2
+
+        let (sphereVerts, sphereInds) = Sphere.getVerticesAndIndices Flat OutwardFacing Even sphere
         sphereVertices <- sphereVerts
         sphereIndices <- sphereInds
 
@@ -148,12 +156,12 @@ type LandGame() as _this =
     override _this.Draw(gameTime) =
         let time = (single gameTime.TotalGameTime.TotalMilliseconds) / 100.0f
 
-        water.Prepare world view camera _this.DrawTerrain _this.DrawSkyDome
+        water.Prepare world view camera _this.DrawApartFromSky _this.DrawSkyDome
 
         device.SetRenderTarget(hdrRenderTarget)
 
         do device.Clear(Color.Black)
-        _this.DrawTerrain view noClipPlane
+        _this.DrawApartFromSky view noClipPlane
         water.DrawWater time world view projection lightDirection camera
         _this.DrawSkyDome view world
         //_this.DrawDebug refractionRenderTarget
@@ -172,6 +180,10 @@ type LandGame() as _this =
         spriteBatch.End();
 
         do base.Draw(gameTime)
+
+    member _this.DrawApartFromSky (viewMatrix: Matrix) (clipPlane: Vector4) =
+        _this.DrawTerrain viewMatrix clipPlane
+        _this.DrawSphere viewMatrix
 
     member _this.DrawTerrain (viewMatrix: Matrix) (clipPlane: Vector4) =
         let effect = effects.GroundFromAtmosphere
@@ -228,9 +240,23 @@ type LandGame() as _this =
 
         device.DepthStencilState <- DepthStencilState.DepthRead
         let wMatrix = world * Matrix.CreateScale(20000.0f) * Matrix.CreateTranslation(camera.Position)
+        
+        let dot = Vector3.Dot(Vector3.UnitY, -lightDirection)
+        let rot =
+            if dot > 0.99999f then
+                Matrix.Identity
+            else if dot < -0.99999f then
+                Matrix.CreateRotationX(MathHelper.Pi)
+            else
+                let cross = Vector3.Cross(Vector3.UnitY, -lightDirection)
+                let crossLength = cross.Length()
+                let angle = single(Math.Atan2(float crossLength, float dot))
+                cross.Normalize()
+                Matrix.CreateFromAxisAngle(cross, angle)
+        let wMatrix2 = world * Matrix.CreateScale(20000.0f) * rot * Matrix.CreateTranslation(camera.Position)
 
         effect.CurrentTechnique <- effect.Techniques.["SkyFromAtmosphere"]
-        effect.Parameters.["xWorld"].SetValue(wMatrix)
+        effect.Parameters.["xWorld"].SetValue(wMatrix2)
         effect.Parameters.["xView"].SetValue(viewMatrix)
         effect.Parameters.["xProjection"].SetValue(projection)
         effect.Parameters.["xCameraPosition"].SetValue(camera.Position)
@@ -238,9 +264,16 @@ type LandGame() as _this =
 
         environment.Atmosphere.ApplyToEffect effect
 
+//        let rs = device.RasterizerState
+//        let rs' = new RasterizerState()
+//        rs'.FillMode <- FillMode.WireFrame
+//        device.RasterizerState <- rs'
+
         effect.CurrentTechnique.Passes |> Seq.iter
             (fun pass ->
                 pass.Apply()
-                device.DrawUserIndexedPrimitives<VertexPositionNormal>(PrimitiveType.TriangleList, sphereVertices, 0, sphereVertices.Length, sphereIndices, 0, sphereIndices.Length / 3)
+                device.DrawUserIndexedPrimitives<VertexPositionNormal>(PrimitiveType.TriangleList, skySphereVertices, 0, skySphereVertices.Length, skySphereIndices, 0, skySphereIndices.Length / 3)
             )
         device.DepthStencilState <- DepthStencilState.Default
+
+//        device.RasterizerState <- rs

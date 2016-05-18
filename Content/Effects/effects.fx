@@ -219,7 +219,7 @@ PixelToFrame ColouredPS(ColouredVertexToPixel PSIn)
 {
 	PixelToFrame Output = (PixelToFrame)0;
 
-	Output.Color = float4(1.0, 0.0, 0.0, 0.0);
+	Output.Color = float4(1.0, 0.0, 0.0, 1.0);
 	Output.Color.rgb *= PSIn.LightingFactor + xAmbient;
 
 	return Output;

@@ -1,5 +1,6 @@
 ﻿module Sphere
 
+open System
 open Microsoft.Xna.Framework
 open VertexPositionNormal
 
@@ -20,6 +21,18 @@ let getOrientationFactor orientation =
     | OutwardFacing -> 1.0f
 
 type SphereNormals = | Flat | Smooth
+
+type SphereVertexDistribution = | Even | Concentrated
+
+let distributeVertex distribution =
+    match distribution with
+    | Even -> id
+    | Concentrated ->
+        let mapY y = y + 1.0f * (y + 1.0f)
+        (fun (v: Vertex) ->
+            let v' = Vector3(v.X, mapY v.Y, v.Z)
+            v'.Normalize()
+            v')
 
 let Icosahedron =
     let tao = 1.0f / 1.61803399f
@@ -174,10 +187,11 @@ let create levelOfDetail =
     {1 .. levelOfDetail}
     |> Seq.fold (fun sphere _ -> divide sphere) Icosahedron
 
-let getVerticesAndIndicesSmoothNormals orientation sphere =
+let getVerticesAndIndicesSmoothNormals orientation distributeVertices sphere =
     let factor = getOrientationFactor orientation
     let vertices =
         sphere.Vertices
+        |> Array.map distributeVertices
         |> Array.map (fun vertex -> new VertexPositionNormal(vertex, Vector3.Normalize(vertex * factor)))
     let indices =
         sphere.Faces
@@ -188,22 +202,23 @@ let getVerticesAndIndicesSmoothNormals orientation sphere =
         |> Array.map (fun vertex -> Array.findIndex (fun v -> v = vertex) sphere.Vertices)
     (vertices, indices)
 
-let getVerticesAndIndicesFlatNormals orientation sphere =
+let getVerticesAndIndicesFlatNormals orientation distributeVertices sphere =
     let factor = getOrientationFactor orientation
     let (vertices, indices) =
         sphere.Faces
         |> Array.mapi (fun n face ->
             let (vertex1, vertex2, vertex3, cross) = getThreeDistinctVertices face factor
             [|
-                (new VertexPositionNormal(vertex1, cross), 3 * n);
-                (new VertexPositionNormal(vertex2, cross), 3 * n + 1);
-                (new VertexPositionNormal(vertex3, cross), 3 * n + 2);
+                (new VertexPositionNormal(distributeVertices vertex1, cross), 3 * n);
+                (new VertexPositionNormal(distributeVertices vertex2, cross), 3 * n + 1);
+                (new VertexPositionNormal(distributeVertices vertex3, cross), 3 * n + 2);
             |])
         |> Array.concat
         |> Array.unzip
     (vertices, indices)
 
-let getVerticesAndIndices normals orientation sphere =
+let getVerticesAndIndices normals orientation distribution sphere =
+    let distributeVertices = distributeVertex distribution
     match normals with
-    | Smooth -> getVerticesAndIndicesSmoothNormals orientation sphere
-    | Flat -> getVerticesAndIndicesFlatNormals orientation sphere
+    | Smooth -> getVerticesAndIndicesSmoothNormals orientation distributeVertices sphere
+    | Flat -> getVerticesAndIndicesFlatNormals orientation distributeVertices sphere

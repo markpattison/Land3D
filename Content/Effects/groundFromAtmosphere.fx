@@ -127,7 +127,7 @@ struct ScatteringResult
 
 float scale(float cos)
 {
-	float x = 1.0 - cos;
+	float x = max(0.0, 1.0 - cos);
 	return xScaleDepth * exp(-0.00287 + x * (0.459 + x * (3.83 + x  *(-6.80 + x * 5.25))));
 }
 
@@ -406,14 +406,9 @@ WPixelToFrame WaterPS(WVertexToPixel PSIn)
 
 	float fresnelTerm = R0 + (1.0 - R0) * pow(1.0 - dot(eyeVector, normalVector), 5.0);
 
-	float3 reflectionVector = reflect(xLightDirection, normalVector);
-	float specular = max(0.0f, dot(normalize(reflectionVector), normalize(eyeVector)));
-	specular = pow(specular, 1024);
-
 	float4 combinedColor = lerp(reflectiveColor, refractiveColor, fresnelTerm);
 	float4 dullColor = float4(0.3f, 0.35f, 0.45f, 1.0f);
 	Output.Color = lerp(combinedColor, dullColor, 0.0f);
-	Output.Color.rgb += specular;
 
 	//Output.Color.rgb += PSIn.ScatteringColour;
 
