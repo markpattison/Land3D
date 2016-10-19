@@ -42,8 +42,8 @@ type LandGame() as _this =
     let mutable perlinTexture3D = Unchecked.defaultof<Texture3D>
     let mutable sphereVertices = Unchecked.defaultof<VertexPositionNormal[]>
     let mutable sphereIndices = Unchecked.defaultof<int[]>
-    do graphics.PreferredBackBufferWidth <- 600
-    do graphics.PreferredBackBufferHeight <- 400
+    do graphics.PreferredBackBufferWidth <- 900
+    do graphics.PreferredBackBufferHeight <- 700
     do graphics.IsFullScreen <- false
     do graphics.ApplyChanges()
     do base.Content.RootDirectory <- "Content"
@@ -157,7 +157,7 @@ type LandGame() as _this =
         _this.DrawApartFromSky view noClipPlane
         water.DrawWater time world view projection lightDirection camera
         sky.DrawSkyDome world projection lightDirection camera view
-        //_this.DrawDebug refractionRenderTarget
+        //_this.DrawDebug water.ReflectionTarget
 
         device.SetRenderTarget(null)
 
