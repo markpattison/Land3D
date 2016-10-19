@@ -157,7 +157,7 @@ type LandGame() as _this =
         _this.DrawApartFromSky false view noClipPlane
         water.DrawWater time world view projection lightDirection camera
         sky.DrawSkyDome world projection lightDirection camera view
-        _this.DrawDebug water.ReflectionTarget
+        //_this.DrawDebug water.RefractionTarget
 
         device.SetRenderTarget(null)
 

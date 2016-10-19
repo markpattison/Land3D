@@ -389,7 +389,7 @@ WPixelToFrame WaterPS(WVertexToPixel PSIn)
     float distanceMax10 = reflectiveColorNoPerturb.a;
     float2 perturbatedReflTexCoords = projectedReflTexCoords + perturbation * distanceMax10 / 2.0f;
     float4 reflectiveColorPerturb = tex2D(ReflectionSampler, perturbatedReflTexCoords);
-    float4 reflectiveColor = (reflectiveColorPerturb.a = 0.0f) ? reflectiveColorNoPerturb : reflectiveColorPerturb;
+    float4 reflectiveColor = (reflectiveColorPerturb.a == 0.0f) ? reflectiveColorNoPerturb : reflectiveColorPerturb;
 
 	float2 projectedRefrTexCoords;
 	projectedRefrTexCoords.x = PSIn.RefractionMapSamplingPos.x / PSIn.RefractionMapSamplingPos.w / 2.0f + 0.5f;
@@ -398,9 +398,11 @@ WPixelToFrame WaterPS(WVertexToPixel PSIn)
     float distanceUnderwaterMax10 = refractiveColorNoPerturb.a;
     float2 perturbatedRefrTexCoords = projectedRefrTexCoords + perturbation * distanceUnderwaterMax10 / 2.0f;
     float4 refractiveColorPerturb = tex2D(RefractionSampler, perturbatedRefrTexCoords);
-    float4 refractiveColor = (refractiveColorPerturb.a = 0.0f) ? refractiveColorNoPerturb : refractiveColorPerturb;
+    float4 refractiveColor = (refractiveColorPerturb.a == 0.0f) ? refractiveColorNoPerturb : refractiveColorPerturb;
 	float4 dullColor = float4(0.0, 0.05, 0.1, 1.0);
-    refractiveColor = lerp(refractiveColor, dullColor, 1.0 - exp(-distanceUnderwaterMax10 * xWaterOpacity));
+    
+    float dullWeighting = (refractiveColor.a == 0.0) ? 1.0 : distanceUnderwaterMax10;
+    refractiveColor = lerp(refractiveColor, dullColor, 1.0 - exp(-dullWeighting * xWaterOpacity));
 
 	float3 eyeVector = normalize(xCameraPosition - PSIn.WorldPosition);
 
