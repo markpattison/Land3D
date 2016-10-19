@@ -154,10 +154,10 @@ type LandGame() as _this =
         device.SetRenderTarget(hdrRenderTarget)
 
         do device.Clear(Color.Black)
-        _this.DrawApartFromSky view noClipPlane
+        _this.DrawApartFromSky false view noClipPlane
         water.DrawWater time world view projection lightDirection camera
         sky.DrawSkyDome world projection lightDirection camera view
-        //_this.DrawDebug water.ReflectionTarget
+        _this.DrawDebug water.ReflectionTarget
 
         device.SetRenderTarget(null)
 
@@ -174,11 +174,11 @@ type LandGame() as _this =
 
         do base.Draw(gameTime)
 
-    member _this.DrawApartFromSky (viewMatrix: Matrix) (clipPlane: Vector4) =
-        _this.DrawTerrain viewMatrix clipPlane
+    member _this.DrawApartFromSky x (viewMatrix: Matrix) (clipPlane: Vector4) =
+        _this.DrawTerrain x viewMatrix clipPlane
         _this.DrawSphere viewMatrix
 
-    member _this.DrawTerrain (viewMatrix: Matrix) (clipPlane: Vector4) =
+    member _this.DrawTerrain (x: bool) (viewMatrix: Matrix) (clipPlane: Vector4) =
         let effect = effects.GroundFromAtmosphere
 
         effect.CurrentTechnique <- effect.Techniques.["GroundFromAtmosphere"]
@@ -190,9 +190,12 @@ type LandGame() as _this =
         effect.Parameters.["xTexture"].SetValue(textures.Grass)
         effect.Parameters.["xClipPlane"].SetValue(clipPlane)
         effect.Parameters.["xAmbient"].SetValue(0.5f)
+        effect.Parameters.["xAlphaAfterWaterDepthWeighting"].SetValue(x)
 
         environment.Atmosphere.ApplyToEffect effect
         environment.Water.ApplyToGroundEffect effect
+
+        device.BlendState <- BlendState.Opaque
 
         effect.CurrentTechnique.Passes |> Seq.iter
             (fun pass ->

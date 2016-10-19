@@ -49,7 +49,7 @@ let loadEnvironment =
                 WindDirection = Vector2(0.0f, 1.0f);
                 WindForce = 0.0015f;
                 WaveLength = 0.1f;
-                WaveHeight = 0.2f;
-                Opacity = 0.03f;
+                WaveHeight = 0.8f;
+                Opacity = 1.0f;
             };
     }

@@ -49,8 +49,8 @@ type Water(effect: Effect, perlinTexture3D: Texture3D, environment: EnvironmentP
 
     member _this.Prepare view camera drawTerrain drawSkyDome =
         reflectionView <- calculateReflectionView camera
-        drawRefractionMap drawTerrain view
-        drawReflectionMap drawTerrain drawSkyDome reflectionView
+        drawRefractionMap (drawTerrain true) view
+        drawReflectionMap (drawTerrain true) drawSkyDome reflectionView
 
     member _this.DrawWater (time: single) (world: Matrix) (view: Matrix) (projection: Matrix) (lightDirection: Vector3) (camera: FreeCamera) =
         effect.CurrentTechnique <- effect.Techniques.["Water"]

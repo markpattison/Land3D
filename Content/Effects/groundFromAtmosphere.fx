@@ -17,6 +17,7 @@ float2 xWindDirection;
 float xWaveLength;
 float xWaveHeight;
 float xPerlinSize3D;
+bool xAlphaAfterWaterDepthWeighting;
 
 float xG;
 float xGSquared;
@@ -291,9 +292,9 @@ PixelToFrame GroundFromAtmospherePS(GroundFromAtmosphere_VertexToPixel PSInput)
 	output.Color.rgb += PSInput.ScatteringColour;
 	
 	// water depth
-	float distanceUnderwater = PSInput.WorldPosition.y >= 0.0 ? 0.0 : length(PSInput.WorldPosition.xyz - xCameraPosition) * PSInput.WorldPosition.y / (PSInput.WorldPosition.y - xCameraPosition.y);
-	float4 dullColor = float4(0.0, 0.0, 0.0, 1.0);
-	output.Color = lerp(output.Color, dullColor, 1.0 - exp(-distanceUnderwater * xWaterOpacity));
+    float distanceAfterWater = abs (length(PSInput.WorldPosition.xyz - xCameraPosition) * PSInput.WorldPosition.y / (PSInput.WorldPosition.y - xCameraPosition.y));
+    float distanceAfterWaterMax10 = clamp(distanceAfterWater / 10.0, 0.0, 1.0);
+    output.Color.a = xAlphaAfterWaterDepthWeighting ? distanceAfterWaterMax10 : 1.0f;
 
 	return output;
 }
@@ -384,17 +385,22 @@ WPixelToFrame WaterPS(WVertexToPixel PSIn)
 	float2 projectedReflTexCoords;
 	projectedReflTexCoords.x = PSIn.ReflectionMapSamplingPos.x / PSIn.ReflectionMapSamplingPos.w / 2.0f + 0.5f;
 	projectedReflTexCoords.y = -PSIn.ReflectionMapSamplingPos.y / PSIn.ReflectionMapSamplingPos.w / 2.0f + 0.5f;
-	float2 perturbatedTexCoords = projectedReflTexCoords + perturbation;
-	float4 reflectiveColor = tex2D(ReflectionSampler, perturbatedTexCoords);
+    float4 reflectiveColorNoPerturb = tex2D(ReflectionSampler, projectedReflTexCoords);
+    float distanceMax10 = reflectiveColorNoPerturb.a;
+    float2 perturbatedReflTexCoords = projectedReflTexCoords + perturbation * distanceMax10 / 2.0f;
+    float4 reflectiveColorPerturb = tex2D(ReflectionSampler, perturbatedReflTexCoords);
+    float4 reflectiveColor = (reflectiveColorPerturb.a = 0.0f) ? reflectiveColorNoPerturb : reflectiveColorPerturb;
 
 	float2 projectedRefrTexCoords;
 	projectedRefrTexCoords.x = PSIn.RefractionMapSamplingPos.x / PSIn.RefractionMapSamplingPos.w / 2.0f + 0.5f;
 	projectedRefrTexCoords.y = -PSIn.RefractionMapSamplingPos.y / PSIn.RefractionMapSamplingPos.w / 2.0f + 0.5f;
-	float2 perturbatedRefrTexCoords = projectedRefrTexCoords + perturbation;
-	float4 refractiveColorPerturb = tex2D(RefractionSampler, perturbatedRefrTexCoords);
-	float4 refractiveColorNoPerturb = tex2D(RefractionSampler, projectedRefrTexCoords);
-	float alpha = refractiveColorPerturb.a;
-	float4 refractiveColor = lerp(refractiveColorNoPerturb, refractiveColorPerturb, alpha);
+    float4 refractiveColorNoPerturb = tex2D(RefractionSampler, projectedRefrTexCoords);
+    float distanceUnderwaterMax10 = refractiveColorNoPerturb.a;
+    float2 perturbatedRefrTexCoords = projectedRefrTexCoords + perturbation * distanceUnderwaterMax10 / 2.0f;
+    float4 refractiveColorPerturb = tex2D(RefractionSampler, perturbatedRefrTexCoords);
+    float4 refractiveColor = (refractiveColorPerturb.a = 0.0f) ? refractiveColorNoPerturb : refractiveColorPerturb;
+	float4 dullColor = float4(0.0, 0.0, 0.0, 1.0);
+    refractiveColor = lerp(refractiveColor, dullColor, 1.0 - exp(-distanceUnderwaterMax10 * xWaterOpacity));
 
 	float3 eyeVector = normalize(xCameraPosition - PSIn.WorldPosition);
 
@@ -409,6 +415,10 @@ WPixelToFrame WaterPS(WVertexToPixel PSIn)
     float4 combinedColor = lerp(reflectiveColor, refractiveColor, fresnelTerm);
     combinedColor.a = 1.0;
     Output.Color = combinedColor;
+
+    //float foamWeight = 1.0 - clamp(distanceUnderwaterMax10 * 10.0, 0.0, 1.0);
+
+    //Output.Color = lerp (combinedColor, float4(1.0, 1.0, 1.0, 1.0), foamWeight);
 
 	//Output.Color.rgb += PSIn.ScatteringColour;
 
