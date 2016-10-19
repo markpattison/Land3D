@@ -42,14 +42,22 @@ Target "BuildContent" (fun _ ->
 
 Target "BuildApp" (fun _ ->
     appReferences
-        |> MSBuildRelease buildDir "Build"
+        |> MSBuildDebug buildDir "Build"
         |> Log "AppBuild-Output: "
 )
+
+Target "RunApp" (fun _ ->
+    ExecProcess (fun info ->
+        info.FileName <- buildDir + @"Land.exe"
+        info.WorkingDirectory <- buildDir)
+        (TimeSpan.FromDays 1.0)
+    |> ignore)
 
 // Build order
 "Clean"
     ==> "BuildContent"
     ==> "BuildApp"
+    ==> "RunApp"
 
 // start build
 RunTargetOrDefault "BuildApp"
