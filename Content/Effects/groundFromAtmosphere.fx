@@ -399,7 +399,7 @@ WPixelToFrame WaterPS(WVertexToPixel PSIn)
     float2 perturbatedRefrTexCoords = projectedRefrTexCoords + perturbation * distanceUnderwaterMax10 / 2.0f;
     float4 refractiveColorPerturb = tex2D(RefractionSampler, perturbatedRefrTexCoords);
     float4 refractiveColor = (refractiveColorPerturb.a = 0.0f) ? refractiveColorNoPerturb : refractiveColorPerturb;
-	float4 dullColor = float4(0.0, 0.0, 0.0, 1.0);
+	float4 dullColor = float4(0.0, 0.05, 0.1, 1.0);
     refractiveColor = lerp(refractiveColor, dullColor, 1.0 - exp(-distanceUnderwaterMax10 * xWaterOpacity));
 
 	float3 eyeVector = normalize(xCameraPosition - PSIn.WorldPosition);
@@ -412,7 +412,7 @@ WPixelToFrame WaterPS(WVertexToPixel PSIn)
 
 	float fresnelTerm = R0 + (1.0 - R0) * pow(1.0 - dot(eyeVector, normalVector), 5.0);
 
-    float4 combinedColor = lerp(reflectiveColor, refractiveColor, fresnelTerm);
+    float4 combinedColor = lerp(refractiveColor, reflectiveColor, fresnelTerm);
     combinedColor.a = 1.0;
     Output.Color = combinedColor;
 

@@ -50,6 +50,6 @@ let loadEnvironment =
                 WindForce = 0.0015f;
                 WaveLength = 0.1f;
                 WaveHeight = 0.8f;
-                Opacity = 1.0f;
+                Opacity = 4.0f;
             };
     }
