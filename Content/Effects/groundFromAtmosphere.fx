@@ -406,9 +406,9 @@ WPixelToFrame WaterPS(WVertexToPixel PSIn)
 
 	float fresnelTerm = R0 + (1.0 - R0) * pow(1.0 - dot(eyeVector, normalVector), 5.0);
 
-	float4 combinedColor = lerp(reflectiveColor, refractiveColor, fresnelTerm);
-	float4 dullColor = float4(0.3f, 0.35f, 0.45f, 1.0f);
-	Output.Color = lerp(combinedColor, dullColor, 0.0f);
+    float4 combinedColor = lerp(reflectiveColor, refractiveColor, fresnelTerm);
+    combinedColor.a = 1.0;
+    Output.Color = combinedColor;
 
 	//Output.Color.rgb += PSIn.ScatteringColour;
 
