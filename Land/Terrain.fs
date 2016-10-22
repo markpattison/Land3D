@@ -51,6 +51,8 @@ type Terrain(size) =
         this.ApplyToHeights (fun height -> newMin + scale * (height - min))
     member this.Stretch factor =
         this.ApplyToHeights (fun height -> height ** factor)
+    member _this.MinMax() =
+        MinMax height
 
 let Normals (terrain:Terrain) =
     let normals = Array2D.zeroCreate<Vector3> terrain.SizeVertices terrain.SizeVertices

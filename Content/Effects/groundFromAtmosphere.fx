@@ -9,6 +9,7 @@ float3 xLightDirection;
 float4 xClipPlane;
 float xAmbient;
 float3 xCameraPosition;
+float2 xMinMaxHeight;
 
 float xWaterOpacity;
 float xTime;
@@ -36,8 +37,49 @@ float xScaleOverScaleDepth;
 
 int xSamples = 4;
 
-Texture xTexture;
-sampler TextureSampler = sampler_state { texture = <xTexture>; magfilter = LINEAR; minfilter = LINEAR; mipfilter = LINEAR; AddressU = mirror; AddressV = mirror; };
+Texture xGrassTexture;
+sampler GrassTextureSampler = sampler_state
+{
+    texture = <xGrassTexture>;
+    magfilter = LINEAR;
+    minfilter = LINEAR;
+    mipfilter = LINEAR;
+    AddressU = mirror;
+    AddressV = mirror;
+};
+
+Texture xRockTexture;
+sampler RockTextureSampler = sampler_state
+{
+    texture = <xRockTexture>;
+    magfilter = LINEAR;
+    minfilter = LINEAR;
+    mipfilter = LINEAR;
+    AddressU = mirror;
+    AddressV = mirror;
+};
+
+Texture xSandTexture;
+sampler SandTextureSampler = sampler_state
+{
+    texture = <xSandTexture>;
+    magfilter = LINEAR;
+    minfilter = LINEAR;
+    mipfilter = LINEAR;
+    AddressU = mirror;
+    AddressV = mirror;
+};
+
+Texture xSnowTexture;
+sampler SnowTextureSampler = sampler_state
+{
+    texture = <xSnowTexture>;
+    magfilter = LINEAR;
+    minfilter = LINEAR;
+    mipfilter = LINEAR;
+    AddressU = mirror;
+    AddressV = mirror;
+};
 
 Texture xReflectionMap;
 sampler ReflectionSampler = sampler_state { texture = <xReflectionMap>; magfilter = LINEAR; minfilter = LINEAR; mipfilter = LINEAR; AddressU = mirror; AddressV = mirror; };
@@ -279,11 +321,37 @@ GroundFromAtmosphere_VertexToPixel GroundFromAtmosphereVSOld(GroundFromAtmospher
 PixelToFrame GroundFromAtmospherePS(GroundFromAtmosphere_VertexToPixel PSInput)
 {
 	clip(PSInput.ClipDistance);
+    PixelToFrame output = (PixelToFrame) 0;
 
-	PixelToFrame output = (PixelToFrame)0;
+    float4 weights;
 
-	float4 farColour = tex2D(TextureSampler, PSInput.TextureCoords);
-	float4 nearColour = tex2D(TextureSampler, PSInput.TextureCoords * 3.0);
+    float sandTo = 0.35;
+    float grassFrom = 0.37;
+    float grassTo = 0.57;
+    float rockFrom = 0.60;
+    float rockTo = 0.80;
+    float snowFrom = 0.85;
+
+    float heightSpan = xMinMaxHeight.y - xMinMaxHeight.x;
+    float normHeight = (PSInput.WorldPosition.y - xMinMaxHeight.x) / heightSpan;
+    weights.x = (normHeight - grassFrom) / (sandTo - grassFrom);
+    weights.y = min((normHeight - sandTo) / (grassFrom - sandTo), (normHeight - rockFrom) / (grassTo - rockFrom));
+    weights.z = min((normHeight - grassTo) / (rockFrom - grassTo), (normHeight - snowFrom) / (rockTo - snowFrom));
+    weights.w = (normHeight - rockTo) / (snowFrom - rockTo);
+    weights = clamp(weights, 0.0, 1.0);
+
+    float4 farColour =
+        tex2D(SandTextureSampler, PSInput.TextureCoords) * weights.x +
+        tex2D(GrassTextureSampler, PSInput.TextureCoords) * weights.y +
+        tex2D(RockTextureSampler, PSInput.TextureCoords) * weights.z +
+        tex2D(SnowTextureSampler, PSInput.TextureCoords) * weights.w;
+
+    float4 nearColour =
+        tex2D(SandTextureSampler, PSInput.TextureCoords * 3.0) * weights.x +
+        tex2D(GrassTextureSampler, PSInput.TextureCoords * 3.0) * weights.y +
+        tex2D(RockTextureSampler, PSInput.TextureCoords * 3.0) * weights.z +
+        tex2D(SnowTextureSampler, PSInput.TextureCoords * 3.0) * weights.w;
+
 	float blendFactor = clamp((PSInput.Depth - 0.95) / 0.05, 0, 1);
 
 	output.Color = lerp(nearColour, farColour, blendFactor);

@@ -42,6 +42,7 @@ type LandGame() as _this =
     let mutable perlinTexture3D = Unchecked.defaultof<Texture3D>
     let mutable sphereVertices = Unchecked.defaultof<VertexPositionNormal[]>
     let mutable sphereIndices = Unchecked.defaultof<int[]>
+    let mutable minMaxTerrainHeight = Unchecked.defaultof<Vector2>
     do graphics.PreferredBackBufferWidth <- 900
     do graphics.PreferredBackBufferHeight <- 700
     do graphics.IsFullScreen <- false
@@ -53,9 +54,12 @@ type LandGame() as _this =
         do terrain.DeformCircularFaults 300 2.0f 20.0f 100.0f
         do terrain.Normalize 0.5f 2.0f
         do terrain.Stretch 2.5f
-        do terrain.Normalize -10.0f 10.0f
+        do terrain.Normalize -5.0f 15.0f
         vertices <- GetVertices terrain
         indices <- GetIndices terrain.Size
+        minMaxTerrainHeight <-
+            let (min, max) = terrain.MinMax()
+            new Vector2(min, max)
 
     override _this.Initialize() =
         device <- base.GraphicsDevice
@@ -187,10 +191,14 @@ type LandGame() as _this =
         effect.Parameters.["xProjection"].SetValue(projection)
         effect.Parameters.["xCameraPosition"].SetValue(camera.Position)
         effect.Parameters.["xLightDirection"].SetValue(lightDirection)
-        effect.Parameters.["xTexture"].SetValue(textures.Grass)
+        effect.Parameters.["xGrassTexture"].SetValue(textures.Grass)
+        effect.Parameters.["xRockTexture"].SetValue(textures.Rock)
+        effect.Parameters.["xSandTexture"].SetValue(textures.Sand)
+        effect.Parameters.["xSnowTexture"].SetValue(textures.Snow)
         effect.Parameters.["xClipPlane"].SetValue(clipPlane)
         effect.Parameters.["xAmbient"].SetValue(0.5f)
         effect.Parameters.["xAlphaAfterWaterDepthWeighting"].SetValue(x)
+        effect.Parameters.["xMinMaxHeight"].SetValue(minMaxTerrainHeight)
 
         environment.Atmosphere.ApplyToEffect effect
         environment.Water.ApplyToGroundEffect effect

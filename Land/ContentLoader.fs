@@ -16,6 +16,9 @@ type Effects =
 type Textures =
     {
         Grass: Texture2D;
+        Rock: Texture2D;
+        Sand: Texture2D;
+        Snow: Texture2D;
     }
 
 let loadEffects (game: Game) =
@@ -29,6 +32,9 @@ let loadEffects (game: Game) =
 let loadTextures (game: Game) =
     {
         Grass = game.Content.Load<Texture2D>("Textures/grass")
+        Rock = game.Content.Load<Texture2D>("Textures/rock")
+        Sand = game.Content.Load<Texture2D>("Textures/sand")
+        Snow = game.Content.Load<Texture2D>("Textures/snow")
     }
 
 let loadEnvironment =
