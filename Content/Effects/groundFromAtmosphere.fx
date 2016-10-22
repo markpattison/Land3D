@@ -100,6 +100,7 @@ struct GroundFromAtmosphere_ToVertex
 struct GroundFromAtmosphere_VertexToPixel
 {
 	float4 Position : SV_POSITION;
+    float3 Normal : NORMAL;
 	float3 ScatteringColour : COLOR0;
 	float3 Attenuation : COLOR1;
 	float LightingFactor : TEXCOORD0;
@@ -238,6 +239,7 @@ GroundFromAtmosphere_VertexToPixel GroundFromAtmosphereVS(GroundFromAtmosphere_T
 	output.TextureCoords = VSInput.TexCoords;
 
 	float3 normal = normalize(mul(float4(normalize(VSInput.Normal), 0.0), xWorld)).xyz;
+    output.Normal = normal;
 
 	output.LightingFactor = dot(normal, -xLightDirection);
 
@@ -354,12 +356,17 @@ PixelToFrame GroundFromAtmospherePS(GroundFromAtmosphere_VertexToPixel PSInput)
 
 	float blendFactor = clamp((PSInput.Depth - 0.95) / 0.05, 0, 1);
 
+    float3 reflectionVector = -reflect(xLightDirection, PSInput.Normal);
+    float specular = dot(normalize(reflectionVector), normalize(PSInput.WorldPosition - xCameraPosition));
+    specular = pow(max(specular, 0.0), 1024) * weights.w; // specular on snow only
+
 	output.Color = lerp(nearColour, farColour, blendFactor);
-	output.Color.rgb *= saturate(PSInput.LightingFactor) + xAmbient;
+	output.Color.rgb *= (saturate(PSInput.LightingFactor) + xAmbient);
+    output.Color.rgb += specular;
 	output.Color.rgb *= PSInput.Attenuation;
 	output.Color.rgb += PSInput.ScatteringColour;
 	
-	// water depth
+	// water depth if required
     float distanceAfterWater = abs (length(PSInput.WorldPosition.xyz - xCameraPosition) * PSInput.WorldPosition.y / (PSInput.WorldPosition.y - xCameraPosition.y));
     float distanceAfterWaterMax10 = clamp(distanceAfterWater / 10.0, 0.0, 1.0);
     output.Color.a = xAlphaAfterWaterDepthWeighting ? distanceAfterWaterMax10 : 1.0f;
