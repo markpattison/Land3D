@@ -50,10 +50,10 @@ type LandGame() as _this =
     do base.Content.RootDirectory <- "Content"
 
     let createTerrain =
-        terrain <- Terrain 128
-        do terrain.DeformCircularFaults 300 2.0f 20.0f 100.0f
+        terrain <- Terrain 256
+        do terrain.DeformCircularFaults 500 2.0f 20.0f 100.0f
         do terrain.Normalize 0.5f 2.0f
-        do terrain.Stretch 0.5f
+        do terrain.Stretch 2.0f
         do terrain.Normalize -5.0f 15.0f
         vertices <- GetVertices terrain
         indices <- GetIndices terrain.Size

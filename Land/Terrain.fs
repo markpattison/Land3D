@@ -40,7 +40,7 @@ type Terrain(size) =
                     let distZ = (single z) - faultZ
                     let distSqd = distX * distX + distZ * distZ
                     if (distSqd < faultSizeSqd) then
-                        height.[x, z] <- height.[x, z] + faultDelta
+                        height.[x, z] <- height.[x, z] + faultDelta * (1.0f - (float32 distSqd) / (float32 faultSizeSqd))
     member private _this.ApplyToHeights f =
         for x = 0 to size do
             for z = 0 to size do
