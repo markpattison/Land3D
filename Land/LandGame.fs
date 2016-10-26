@@ -161,7 +161,7 @@ type LandGame() as _this =
         _this.DrawApartFromSky false view noClipPlane
         water.DrawWater time world view projection lightDirection camera
         sky.DrawSkyDome world projection lightDirection camera view
-        //_this.DrawDebug water.RefractionTarget
+        //_this.DrawDebug perlinTexture3D
 
         device.SetRenderTarget(null)
 
@@ -199,6 +199,8 @@ type LandGame() as _this =
         effect.Parameters.["xAmbient"].SetValue(0.5f)
         effect.Parameters.["xAlphaAfterWaterDepthWeighting"].SetValue(x)
         effect.Parameters.["xMinMaxHeight"].SetValue(minMaxTerrainHeight)
+        effect.Parameters.["xPerlinSize3D"].SetValue(15.0f)
+       // effect.Parameters.["xRandomTexture3D"].SetValue(perlinTexture3D)
 
         environment.Atmosphere.ApplyToEffect effect
         environment.Water.ApplyToGroundEffect effect

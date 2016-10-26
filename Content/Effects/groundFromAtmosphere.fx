@@ -37,7 +37,7 @@ float xScaleOverScaleDepth;
 
 int xSamples = 4;
 
-Texture xGrassTexture;
+texture xGrassTexture;
 sampler GrassTextureSampler = sampler_state
 {
     texture = <xGrassTexture>;
@@ -48,7 +48,7 @@ sampler GrassTextureSampler = sampler_state
     AddressV = mirror;
 };
 
-Texture xRockTexture;
+texture xRockTexture;
 sampler RockTextureSampler = sampler_state
 {
     texture = <xRockTexture>;
@@ -59,7 +59,7 @@ sampler RockTextureSampler = sampler_state
     AddressV = mirror;
 };
 
-Texture xSandTexture;
+texture xSandTexture;
 sampler SandTextureSampler = sampler_state
 {
     texture = <xSandTexture>;
@@ -70,7 +70,7 @@ sampler SandTextureSampler = sampler_state
     AddressV = mirror;
 };
 
-Texture xSnowTexture;
+texture xSnowTexture;
 sampler SnowTextureSampler = sampler_state
 {
     texture = <xSnowTexture>;
@@ -81,13 +81,13 @@ sampler SnowTextureSampler = sampler_state
     AddressV = mirror;
 };
 
-Texture xReflectionMap;
+texture xReflectionMap;
 sampler ReflectionSampler = sampler_state { texture = <xReflectionMap>; magfilter = LINEAR; minfilter = LINEAR; mipfilter = LINEAR; AddressU = mirror; AddressV = mirror; };
 
-Texture xRefractionMap;
+texture xRefractionMap;
 sampler RefractionSampler = sampler_state { texture = <xRefractionMap>; magfilter = LINEAR; minfilter = LINEAR; mipfilter = LINEAR; AddressU = mirror; AddressV = mirror; };
 
-Texture xRandomTexture3D;
+texture xRandomTexture3D;
 sampler RandomTextureSampler3D = sampler_state { texture = <xRandomTexture3D>; AddressU = WRAP; AddressV = WRAP; AddressW = WRAP; };
 
 struct GroundFromAtmosphere_ToVertex
@@ -103,7 +103,6 @@ struct GroundFromAtmosphere_VertexToPixel
     float3 Normal : NORMAL;
 	float3 ScatteringColour : COLOR0;
 	float3 Attenuation : COLOR1;
-	float LightingFactor : TEXCOORD0;
 	float2 TextureCoords : TEXCOORD1;
 	float ClipDistance : TEXCOORD2;
 	float Depth : TEXCOORD4;
@@ -117,7 +116,7 @@ struct PixelToFrame
 
 float Perlin3D(float3 pIn)
 {
-	float3 p = pIn * xPerlinSize3D;
+	float3 p = (pIn + 0.5) * xPerlinSize3D;
 
 	float3 posAAA = floor(p);
 	float3 t = p - posAAA;
@@ -130,23 +129,23 @@ float Perlin3D(float3 pIn)
 	float3 posABB = posAAA + float3(0.0, 1.0, 1.0);
 	float3 posBBB = posAAA + float3(1.0, 1.0, 1.0);
 
-	float3 colAAA = tex3D(RandomTextureSampler3D, posAAA / xPerlinSize3D).xyz * 2.0 - 1.0;
-	float3 colBAA = tex3D(RandomTextureSampler3D, posBAA / xPerlinSize3D).xyz * 2.0 - 1.0;
-	float3 colABA = tex3D(RandomTextureSampler3D, posABA / xPerlinSize3D).xyz * 2.0 - 1.0;
-	float3 colBBA = tex3D(RandomTextureSampler3D, posBBA / xPerlinSize3D).xyz * 2.0 - 1.0;
-	float3 colAAB = tex3D(RandomTextureSampler3D, posAAB / xPerlinSize3D).xyz * 2.0 - 1.0;
-	float3 colBAB = tex3D(RandomTextureSampler3D, posBAB / xPerlinSize3D).xyz * 2.0 - 1.0;
-	float3 colABB = tex3D(RandomTextureSampler3D, posABB / xPerlinSize3D).xyz * 2.0 - 1.0;
-	float3 colBBB = tex3D(RandomTextureSampler3D, posBBB / xPerlinSize3D).xyz * 2.0 - 1.0;
+	float3 colAAA = tex3D(RandomTextureSampler3D, posAAA / xPerlinSize3D).xyz * 4.0 - 1.0;
+	float3 colBAA = tex3D(RandomTextureSampler3D, posBAA / xPerlinSize3D).xyz * 4.0 - 1.0;
+	float3 colABA = tex3D(RandomTextureSampler3D, posABA / xPerlinSize3D).xyz * 4.0 - 1.0;
+	float3 colBBA = tex3D(RandomTextureSampler3D, posBBA / xPerlinSize3D).xyz * 4.0 - 1.0;
+	float3 colAAB = tex3D(RandomTextureSampler3D, posAAB / xPerlinSize3D).xyz * 4.0 - 1.0;
+	float3 colBAB = tex3D(RandomTextureSampler3D, posBAB / xPerlinSize3D).xyz * 4.0 - 1.0;
+	float3 colABB = tex3D(RandomTextureSampler3D, posABB / xPerlinSize3D).xyz * 4.0 - 1.0;
+	float3 colBBB = tex3D(RandomTextureSampler3D, posBBB / xPerlinSize3D).xyz * 4.0 - 1.0;
 
-	float sAAA = mul(colAAA, p - posAAA);
-	float sBAA = mul(colBAA, p - posBAA);
-	float sABA = mul(colABA, p - posABA);
-	float sBBA = mul(colBBA, p - posBBA);
-	float sAAB = mul(colAAB, p - posAAB);
-	float sBAB = mul(colBAB, p - posBAB);
-	float sABB = mul(colABB, p - posABB);
-	float sBBB = mul(colBBB, p - posBBB);
+	float sAAA = dot(colAAA, p - posAAA);
+	float sBAA = dot(colBAA, p - posBAA);
+	float sABA = dot(colABA, p - posABA);
+	float sBBA = dot(colBBA, p - posBBA);
+	float sAAB = dot(colAAB, p - posAAB);
+	float sBAB = dot(colBAB, p - posBAB);
+	float sABB = dot(colABB, p - posABB);
+	float sBBB = dot(colBBB, p - posBBB);
 
 	//float3 s = t * t * (3 - 2 * t);
 	float3 s = t * t * t * (t * (t * 6 - 15) + 10);
@@ -241,8 +240,6 @@ GroundFromAtmosphere_VertexToPixel GroundFromAtmosphereVS(GroundFromAtmosphere_T
 	float3 normal = normalize(mul(float4(normalize(VSInput.Normal), 0.0), xWorld)).xyz;
     output.Normal = normal;
 
-	output.LightingFactor = dot(normal, -xLightDirection);
-
 	output.ClipDistance = dot(worldPosition, xClipPlane);
 	output.Depth = output.Position.z / output.Position.w;
 
@@ -252,6 +249,43 @@ GroundFromAtmosphere_VertexToPixel GroundFromAtmosphereVS(GroundFromAtmosphere_T
 	output.Attenuation = scattering.Attenuation;
 
 	return output;
+}
+
+float Turbulence(float3 pos, float f)
+{
+    float t = -.5;
+    for (; f <= xPerlinSize3D / 12.0; f *= 2.0)
+        t += abs(Perlin3D(pos) / f);
+    return t;
+}
+
+float3 NoiseGradient(float3 pos)
+{
+    float epsilon = 0.001;
+
+    float3 posx = pos;
+    posx.x += epsilon;
+    float3 posy = pos;
+    posy.y += epsilon;
+    float3 posz = pos;
+    posz.z += epsilon;
+
+    float f0 = Perlin3D(pos);
+    float fx = Perlin3D(posx);
+    float fy = Perlin3D(posy);
+    float fz = Perlin3D(posz);
+
+    float3 gradient = float3(fx - f0, fy - f0, fz - f0) / epsilon;
+
+    return gradient;
+}
+
+
+float3 BumpMapNoiseGradient(float3 worldPosition)
+{
+    float3 pos = worldPosition / 10.0;
+
+    return NoiseGradient(pos) * 0.02;
 }
 
 PixelToFrame GroundFromAtmospherePS(GroundFromAtmosphere_VertexToPixel PSInput)
@@ -290,12 +324,16 @@ PixelToFrame GroundFromAtmospherePS(GroundFromAtmosphere_VertexToPixel PSInput)
 
 	float blendFactor = clamp((PSInput.Depth - 0.95) / 0.05, 0, 1);
 
-    float3 reflectionVector = -reflect(xLightDirection, PSInput.Normal);
+    float3 normal = normalize(PSInput.Normal - BumpMapNoiseGradient(PSInput.WorldPosition));
+
+    float3 reflectionVector = -reflect(xLightDirection, normal);
     float specular = dot(normalize(reflectionVector), normalize(PSInput.WorldPosition - xCameraPosition));
-    specular = pow(max(specular, 0.0), 1024) * weights.w; // specular on snow only
+    specular = pow(max(specular, 0.0), 256) * weights.w; // specular on snow only
+
+    float lightingFactor = clamp(dot(normal, -xLightDirection), 0.0, 1.0);
 
 	output.Color = lerp(nearColour, farColour, blendFactor);
-	output.Color.rgb *= (saturate(PSInput.LightingFactor) + xAmbient);
+    output.Color.rgb *= (saturate(lightingFactor) + xAmbient);
     output.Color.rgb += specular;
 	output.Color.rgb *= PSInput.Attenuation;
 	output.Color.rgb += PSInput.ScatteringColour;
