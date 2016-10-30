@@ -162,6 +162,72 @@ float Perlin3D(float3 pIn)
 	return sPPP;
 }
 
+float4 Perlin3DwithDerivatives(float3 pIn)
+{
+    float3 p = (pIn + 0.5) * xPerlinSize3D;
+
+    float3 posAAA = floor(p);
+    float3 t = p - posAAA;
+
+    float3 posBAA = posAAA + float3(1.0, 0.0, 0.0);
+    float3 posABA = posAAA + float3(0.0, 1.0, 0.0);
+    float3 posBBA = posAAA + float3(1.0, 1.0, 0.0);
+    float3 posAAB = posAAA + float3(0.0, 0.0, 1.0);
+    float3 posBAB = posAAA + float3(1.0, 0.0, 1.0);
+    float3 posABB = posAAA + float3(0.0, 1.0, 1.0);
+    float3 posBBB = posAAA + float3(1.0, 1.0, 1.0);
+
+    float3 colAAA = tex3D(RandomTextureSampler3D, posAAA / xPerlinSize3D).xyz * 4.0 - 1.0;
+    float3 colBAA = tex3D(RandomTextureSampler3D, posBAA / xPerlinSize3D).xyz * 4.0 - 1.0;
+    float3 colABA = tex3D(RandomTextureSampler3D, posABA / xPerlinSize3D).xyz * 4.0 - 1.0;
+    float3 colBBA = tex3D(RandomTextureSampler3D, posBBA / xPerlinSize3D).xyz * 4.0 - 1.0;
+    float3 colAAB = tex3D(RandomTextureSampler3D, posAAB / xPerlinSize3D).xyz * 4.0 - 1.0;
+    float3 colBAB = tex3D(RandomTextureSampler3D, posBAB / xPerlinSize3D).xyz * 4.0 - 1.0;
+    float3 colABB = tex3D(RandomTextureSampler3D, posABB / xPerlinSize3D).xyz * 4.0 - 1.0;
+    float3 colBBB = tex3D(RandomTextureSampler3D, posBBB / xPerlinSize3D).xyz * 4.0 - 1.0;
+
+    float sAAA = dot(colAAA, p - posAAA);
+    float sBAA = dot(colBAA, p - posBAA);
+    float sABA = dot(colABA, p - posABA);
+    float sBBA = dot(colBBA, p - posBBA);
+    float sAAB = dot(colAAB, p - posAAB);
+    float sBAB = dot(colBAB, p - posBAB);
+    float sABB = dot(colABB, p - posABB);
+    float sBBB = dot(colBBB, p - posBBB);
+
+	//float3 s = t * t * (3.0 - 2.0 * t);
+    float3 s = t * t * t * (t * (t * 6.0 - 15.0) + 10.0);
+    float3 ds = t * t * (t * (t * 30.0 - 60.0) + 30.0);
+
+    float cx = sBAA - sAAA;
+    float cy = sABA - sAAA;
+    float cz = sAAB - sAAA;
+
+    float cxy = sBBA - sABA - sBAA + sAAA;
+    float cxz = sBAB - sAAB - sBAA + sAAA;
+    float cyz = sABB - sAAB - sABA + sAAA;
+
+    float cxyz = sBBB - sABB - sBAB + sAAB - sBBA + sABA + sBAA - sAAA;
+
+    float sxy = s.x * s.y;
+    float sxz = s.x * s.z;
+    float syz = s.y * s.z;
+    float sxyz = s.x * s.y * s.xyz;
+
+    float noise = sAAA
+        + cx * s.x + cy * s.y + cz * s.z
+        + cxy * sxy + cxz * sxz + cyz * syz
+        + cxyz * sxyz;
+
+    float4 derivAndNoise = float4(
+        ds.x * (cx + cxy * s.y + cxz * s.z + cxyz * syz),
+        ds.y * (cy + cxy * s.x + cyz * s.z + cxyz * sxz),
+        ds.z * (cz + cxz * s.x + cyz * s.y + cxyz * sxy),
+        noise);
+
+    return derivAndNoise;
+}
+
 struct ScatteringResult
 {
 	float3 ScatteringColour;
@@ -259,33 +325,11 @@ float Turbulence(float3 pos, float f)
     return t;
 }
 
-float3 NoiseGradient(float3 pos)
-{
-    float epsilon = 0.001;
-
-    float3 posx = pos;
-    posx.x += epsilon;
-    float3 posy = pos;
-    posy.y += epsilon;
-    float3 posz = pos;
-    posz.z += epsilon;
-
-    float f0 = Perlin3D(pos);
-    float fx = Perlin3D(posx);
-    float fy = Perlin3D(posy);
-    float fz = Perlin3D(posz);
-
-    float3 gradient = float3(fx - f0, fy - f0, fz - f0) / epsilon;
-
-    return gradient;
-}
-
-
 float3 BumpMapNoiseGradient(float3 worldPosition)
 {
     float3 pos = worldPosition / 10.0;
 
-    return NoiseGradient(pos) * 0.02;
+    return Perlin3DwithDerivatives(pos).xyz * 0.04;
 }
 
 PixelToFrame GroundFromAtmospherePS(GroundFromAtmosphere_VertexToPixel PSInput)
@@ -295,15 +339,18 @@ PixelToFrame GroundFromAtmospherePS(GroundFromAtmosphere_VertexToPixel PSInput)
 
     float4 weights;
 
-    float sandTo = 0.35;
-    float grassFrom = 0.37;
-    float grassTo = 0.57;
-    float rockFrom = 0.60;
-    float rockTo = 0.80;
-    float snowFrom = 0.85;
+    float sandTo = 0.21;
+    float grassFrom = 0.26;
+    float grassTo = 0.56;
+    float rockFrom = 0.61;
+    float rockTo = 0.79;
+    float snowFrom = 0.86;
 
     float heightSpan = xMinMaxHeight.y - xMinMaxHeight.x;
-    float normHeight = (PSInput.WorldPosition.y - xMinMaxHeight.x) / heightSpan;
+    float3 posXY = float3(PSInput.WorldPosition.xy, 0.0);
+    float normAdjust = 0.1 * Perlin3D(PSInput.WorldPosition / 100.0);
+    float normHeight = (PSInput.WorldPosition.y - xMinMaxHeight.x) / heightSpan + normAdjust;
+
     weights.x = (normHeight - grassFrom) / (sandTo - grassFrom);
     weights.y = min((normHeight - sandTo) / (grassFrom - sandTo), (normHeight - rockFrom) / (grassTo - rockFrom));
     weights.z = min((normHeight - grassTo) / (rockFrom - grassTo), (normHeight - snowFrom) / (rockTo - snowFrom));
