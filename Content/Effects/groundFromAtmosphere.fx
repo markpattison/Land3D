@@ -212,7 +212,7 @@ float4 Perlin3DwithDerivatives(float3 pIn)
     float sxy = s.x * s.y;
     float sxz = s.x * s.z;
     float syz = s.y * s.z;
-    float sxyz = s.x * s.y * s.xyz;
+    float sxyz = s.x * s.y * s.z;
 
     float noise = sAAA
         + cx * s.x + cy * s.y + cz * s.z
@@ -528,4 +528,71 @@ technique Water
 		VertexShader = compile vs_4_0 WaterVS();
 		PixelShader = compile ps_4_0 WaterPS();
 	}
+}
+
+struct ColouredVertexToPixel
+{
+    float4 Position : SV_POSITION;
+    float3 Normal : NORMAL;
+    float3 WorldPosition : TEXCOORD0;
+    float3 ScatteringColour : COLOR0;
+    float3 Attenuation : COLOR1;
+};
+
+ColouredVertexToPixel ColouredVS(float4 inPos : SV_POSITION, float3 inNormal : NORMAL)
+{
+    ColouredVertexToPixel Output = (ColouredVertexToPixel) 0;
+
+    float4x4 preViewProjection = mul(xView, xProjection);
+    float4x4 preWorldViewProjection = mul(xWorld, preViewProjection);
+
+    float3 normal = normalize(mul(float4(normalize(inNormal), 0.0), xWorld)).xyz;
+    Output.Normal = normal;
+
+    float4 worldPosition = mul(inPos, xWorld);
+    Output.Position = mul(inPos, preWorldViewProjection);
+    Output.WorldPosition = worldPosition.xyz;
+
+    ScatteringResult scattering = Scattering(worldPosition.xyz);
+
+    Output.ScatteringColour = scattering.ScatteringColour;
+    Output.Attenuation = scattering.Attenuation;
+
+    return Output;
+}
+
+PixelToFrame ColouredPS(ColouredVertexToPixel PSInput)
+{
+    PixelToFrame Output = (PixelToFrame) 0;
+
+    Output.Color = float4(1.0, 1.0, 1.0, 1.0);
+
+    float3 normal = PSInput.Normal;
+
+    float3 reflectionVector = -reflect(xLightDirection, normal);
+    float specular = dot(normalize(reflectionVector), normalize(PSInput.WorldPosition - xCameraPosition));
+    specular = pow(max(specular, 0.0), 256);
+
+    float lightingFactor = clamp(dot(normal, -xLightDirection), 0.0, 1.0);
+
+    Output.Color.rgb *= (saturate(lightingFactor) + xAmbient);
+    Output.Color.rgb += specular;
+    Output.Color.rgb *= PSInput.Attenuation;
+    Output.Color.rgb += PSInput.ScatteringColour;
+
+	// water depth if required
+    float distanceAfterWater = abs(length(PSInput.WorldPosition.xyz - xCameraPosition) * PSInput.WorldPosition.y / (PSInput.WorldPosition.y - xCameraPosition.y));
+    float distanceAfterWaterMax10 = clamp(distanceAfterWater / 10.0, 0.0, 1.0);
+    Output.Color.a = xAlphaAfterWaterDepthWeighting ? distanceAfterWaterMax10 : 1.0f;
+
+    return Output;
+}
+
+technique Coloured
+{
+    pass Pass0
+    {
+        VertexShader = compile vs_4_0 ColouredVS();
+        PixelShader = compile ps_4_0 ColouredPS();
+    }
 }

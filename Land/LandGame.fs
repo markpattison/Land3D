@@ -122,7 +122,7 @@ type LandGame() as _this =
 
         let sphere = Sphere.create 2
 
-        let (sphereVerts, sphereInds) = Sphere.getVerticesAndIndices Flat OutwardFacing Even sphere
+        let (sphereVerts, sphereInds) = Sphere.getVerticesAndIndices Smooth OutwardFacing Even sphere
         sphereVertices <- sphereVerts
         sphereIndices <- sphereInds
 
@@ -214,9 +214,9 @@ type LandGame() as _this =
             )
 
     member _this.DrawSphere (viewMatrix: Matrix) =
-        let effect = effects.Effect
+        let effect = effects.GroundFromAtmosphere
 
-        let sphereWorld = Matrix.Multiply(Matrix.CreateTranslation(0.0f, 1.0f, 0.0f), Matrix.CreateScale(10.0f))
+        let sphereWorld = Matrix.Multiply(Matrix.CreateTranslation(0.0f, 1.5f, 0.0f), Matrix.CreateScale(10.0f))
         effect.CurrentTechnique <- effect.Techniques.["Coloured"]
         effect.Parameters.["xWorld"].SetValue(sphereWorld)
         effect.Parameters.["xView"].SetValue(viewMatrix)
