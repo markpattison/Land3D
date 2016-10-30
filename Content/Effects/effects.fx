@@ -39,16 +39,16 @@ float xPerlinSize3D;
 
 //------- Texture Samplers --------
 
-Texture xTexture;
+texture xTexture;
 sampler TextureSampler = sampler_state { texture = <xTexture>; magfilter = LINEAR; minfilter = LINEAR; mipfilter = LINEAR; AddressU = mirror; AddressV = mirror; };
 
-Texture xDebugTexture;
+texture xDebugTexture;
 sampler DebugTextureSampler = sampler_state { texture = <xDebugTexture>; magfilter = LINEAR; minfilter = LINEAR; mipfilter = LINEAR; AddressU = mirror; AddressV = mirror; };
 
-Texture xRandomTexture2D;
+texture xRandomTexture2D;
 sampler RandomTextureSampler2D = sampler_state { texture = <xRandomTexture2D>; AddressU = WRAP; AddressV = WRAP; };
 
-Texture xRandomTexture3D;
+texture xRandomTexture3D;
 sampler RandomTextureSampler3D = sampler_state { texture = <xRandomTexture3D>; AddressU = WRAP; AddressV = WRAP; AddressW = WRAP; };
 
 //------- Perlin noise functions -------

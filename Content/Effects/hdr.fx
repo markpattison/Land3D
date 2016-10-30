@@ -1,4 +1,4 @@
-Texture xTexture;
+texture xTexture;
 sampler TextureSampler = sampler_state { texture = <xTexture>; };
 
 float Expose(float light)
