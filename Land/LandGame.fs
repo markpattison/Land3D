@@ -200,7 +200,7 @@ type LandGame() as _this =
         effect.Parameters.["xAlphaAfterWaterDepthWeighting"].SetValue(x)
         effect.Parameters.["xMinMaxHeight"].SetValue(minMaxTerrainHeight)
         effect.Parameters.["xPerlinSize3D"].SetValue(15.0f)
-       // effect.Parameters.["xRandomTexture3D"].SetValue(perlinTexture3D)
+        effect.Parameters.["xRandomTexture3D"].SetValue(perlinTexture3D)
 
         environment.Atmosphere.ApplyToEffect effect
         environment.Water.ApplyToGroundEffect effect

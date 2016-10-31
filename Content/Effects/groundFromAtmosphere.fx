@@ -445,36 +445,16 @@ WVertexToPixel WaterVS(float4 inPos : SV_POSITION, float2 inTex : TEXCOORD)
 	return Output;
 }
 
-float PerlinWater(float3 pos)
-{
-	float3 offset1 = float3(0.1f, 0.6f, 0.3f);
-	float3 offset2 = float3(0.45f, 0.17f, 0.88f);
-	float3 offset3 = float3(0.83f, 0.44f, 0.09f);
-	return 0.25f * Perlin3D(pos) + 0.25f * Perlin3D((pos + offset1) / 1.1f) + 0.25f * Perlin3D((pos + offset2) / 1.25f) + 0.25f * Perlin3D((pos + offset3) / 0.1f);
-}
-
 WPixelToFrame WaterPS(WVertexToPixel PSIn)
 {
 	WPixelToFrame Output = (WPixelToFrame)0;
 
-	//float4 bumpColor = tex2D(WaterBumpMapSampler, PSIn.BumpMapSamplingPos);
-	//float2 perturbation = xWaveHeight * (bumpColor.rg - 0.5f)*2.0f;
-	//float3 normalVector = (bumpColor.rbg - 0.5f) * 2.0f;
+    float4 gradientAndPerturbation = 0.03 * Perlin3DwithDerivatives(PSIn.BumpMapSamplingPos / 2.0)
+        + 0.015 * Perlin3DwithDerivatives(PSIn.BumpMapSamplingPos);
 
-	float epsilon = 1.0f;
-
-	float3 pX = PSIn.BumpMapSamplingPos;
-	pX.x += epsilon;
-	float3 pZ = PSIn.BumpMapSamplingPos;
-	pZ.z += epsilon;
-
-	float noiseScale = 0.1f;
-
-	float noise = PerlinWater(PSIn.BumpMapSamplingPos) * noiseScale;
-	float3 dNoise = float3(PerlinWater(pX) * noiseScale - noise, 0.0f, PerlinWater(pZ) * noiseScale - noise);
-	float3 modNormal = float3(dNoise.x, epsilon, dNoise.z);
-	float3 normalVector = normalize(modNormal);
-	float2 perturbation = xWaveHeight * normalVector.xz;
+    float3 normalVector = float3(0.0, 1.0, 0.0) + gradientAndPerturbation.xyz;
+    normalize(normalVector);
+    float2 perturbation = gradientAndPerturbation.a;
 
 	float2 projectedReflTexCoords;
 	projectedReflTexCoords.x = PSIn.ReflectionMapSamplingPos.x / PSIn.ReflectionMapSamplingPos.w / 2.0f + 0.5f;
