@@ -10,7 +10,7 @@ float4 PixelShaderFunction(float4 position : SV_Position, float4 color : COLOR0,
 {
 	float4 tex = tex2D(TextureSampler, texCoord);
 
-	float4 output;
+	float4 output = 0.0;
 	output.r = Expose(tex.r);
 	output.g = Expose(tex.g);
 	output.b = Expose(tex.b);

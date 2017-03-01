@@ -1,5 +1,4 @@
 NUGET
   remote: https://www.nuget.org/api/v2
-  specs:
-    FAKE (4.22.6)
-    MonoGame.Framework.WindowsDX (3.5.0.1678)
+    FAKE (4.52)
+    MonoGame.Framework.WindowsDX (3.6.0.1625)

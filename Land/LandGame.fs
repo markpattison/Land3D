@@ -43,6 +43,7 @@ type LandGame() as _this =
     let mutable sphereVertices = Unchecked.defaultof<VertexPositionNormal[]>
     let mutable sphereIndices = Unchecked.defaultof<int[]>
     let mutable minMaxTerrainHeight = Unchecked.defaultof<Vector2>
+    do graphics.GraphicsProfile <- GraphicsProfile.HiDef
     do graphics.PreferredBackBufferWidth <- 900
     do graphics.PreferredBackBufferHeight <- 700
     do graphics.IsFullScreen <- false
