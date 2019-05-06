@@ -15,33 +15,38 @@ open EnvironmentParameters
 open Water
 open Sky
 
+type Content =
+    {
+        SpriteBatch: SpriteBatch
+        Effects: Effects
+        Environment: EnvironmentParameters
+        Sky: Sky
+        Vertices: VertexPositionNormalTexture[]
+        DebugVertices: VertexPositionTexture[]
+        Indices: int[]
+        Terrain: Terrain
+        Textures: Textures
+        PerlinTexture3D: Texture3D
+        SphereVertices: VertexPositionNormal[]
+        SphereIndices: int[]
+    }
+
 type LandGame() as _this =
     inherit Game()
     let graphics = new GraphicsDeviceManager(_this)
-    let mutable spriteBatch = Unchecked.defaultof<SpriteBatch>
-    let mutable effects = Unchecked.defaultof<Effects>
-    let mutable environment = Unchecked.defaultof<EnvironmentParameters>
+    let mutable gameContent = Unchecked.defaultof<Content>
     let mutable water = Unchecked.defaultof<Water>
-    let mutable sky = Unchecked.defaultof<Sky>
-    let mutable vertices = Unchecked.defaultof<VertexPositionNormalTexture[]>
-    let mutable debugVertices = Unchecked.defaultof<VertexPositionTexture[]>
-    let mutable indices = Unchecked.defaultof<int[]>
     let mutable world = Unchecked.defaultof<Matrix>
     let mutable view = Unchecked.defaultof<Matrix>
     let mutable reflectionView = Unchecked.defaultof<Matrix>
     let mutable projection = Unchecked.defaultof<Matrix>
     let mutable device = Unchecked.defaultof<GraphicsDevice>
-    let mutable terrain = Unchecked.defaultof<Terrain>
-    let mutable textures = Unchecked.defaultof<Textures>
     let mutable lightDirection = Unchecked.defaultof<Vector3>
     let mutable hdrRenderTarget = Unchecked.defaultof<RenderTarget2D>
     let mutable noClipPlane = Unchecked.defaultof<Vector4>
     let mutable camera = Unchecked.defaultof<FreeCamera>
     let mutable input = Unchecked.defaultof<Input>
     let mutable originalMouseState = Unchecked.defaultof<MouseState>
-    let mutable perlinTexture3D = Unchecked.defaultof<Texture3D>
-    let mutable sphereVertices = Unchecked.defaultof<VertexPositionNormal[]>
-    let mutable sphereIndices = Unchecked.defaultof<int[]>
     let mutable minMaxTerrainHeight = Unchecked.defaultof<Vector2>
     do graphics.GraphicsProfile <- GraphicsProfile.HiDef
     do graphics.PreferredBackBufferWidth <- 900
@@ -51,16 +56,17 @@ type LandGame() as _this =
     do base.Content.RootDirectory <- "Content"
 
     let createTerrain =
-        terrain <- Terrain 256
+        let terrain = Terrain 256
         do terrain.DeformCircularFaults 500 2.0f 20.0f 100.0f
         do terrain.Normalize 0.5f 2.0f
         do terrain.Stretch 4.0f
         do terrain.Normalize -5.0f 25.0f
-        vertices <- GetVertices terrain
-        indices <- GetIndices terrain.Size
+        let vertices = GetVertices terrain
+        let indices = GetIndices terrain.Size
         minMaxTerrainHeight <-
             let (min, max) = terrain.MinMax()
             new Vector2(min, max)
+        (terrain, vertices, indices)
 
     override _this.Initialize() =
         device <- base.GraphicsDevice
@@ -69,14 +75,11 @@ type LandGame() as _this =
         ()
 
     override _this.LoadContent() =
-        environment <- ContentLoader.loadEnvironment
+        let environment = ContentLoader.loadEnvironment
 
-        createTerrain
+        let terrain, vertices, indices = createTerrain
         world <- Matrix.Identity
         projection <- Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 5000.0f)
-
-        effects <- ContentLoader.loadEffects _this
-        textures <- ContentLoader.loadTextures _this
 
         let dir = Vector3(0.0f, -0.5f, -1.0f)
         dir.Normalize()
@@ -86,8 +89,6 @@ type LandGame() as _this =
         hdrRenderTarget <- new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)
         noClipPlane <- Vector4.Zero
 
-        spriteBatch <- new SpriteBatch(device)
-
         let startPosition = Vector3(0.0f, 10.0f, -(single terrain.Size) / 2.0f)
 
         camera <- FreeCamera(startPosition, 0.0f, 0.0f)
@@ -95,7 +96,7 @@ type LandGame() as _this =
         originalMouseState <- Mouse.GetState()
         input <- Input(Keyboard.GetState(), Keyboard.GetState(), Mouse.GetState(), Mouse.GetState(), _this.Window, originalMouseState, 0, 0)
 
-        debugVertices <-
+        let debugVertices =
             [|
                 VertexPositionTexture(Vector3(-0.9f, 0.5f, 0.0f), new Vector2(0.0f, 0.0f));
                 VertexPositionTexture(Vector3(-0.9f, 0.9f, 0.0f), new Vector2(0.0f, 1.0f));
@@ -108,7 +109,7 @@ type LandGame() as _this =
 
         // perlin noise texture
 
-        perlinTexture3D <- new Texture3D(device, 16, 16, 16, false, SurfaceFormat.Color)
+        let perlinTexture3D = new Texture3D(device, 16, 16, 16, false, SurfaceFormat.Color)
         let random = new Random()
 
         let randomVectorColour x =
@@ -124,11 +125,25 @@ type LandGame() as _this =
         let sphere = Sphere.create 2
 
         let (sphereVerts, sphereInds) = Sphere.getVerticesAndIndices Smooth OutwardFacing Even sphere
-        sphereVertices <- sphereVerts
-        sphereIndices <- sphereInds
+
+        let effects = ContentLoader.loadEffects _this
 
         water <- new Water(effects.GroundFromAtmosphere, perlinTexture3D, environment, device)
-        sky <- new Sky(effects.SkyFromAtmosphere, environment, device)
+
+        gameContent <- {
+            SpriteBatch = new SpriteBatch(device)
+            Effects = effects
+            Environment = environment
+            Sky = Sky(effects.SkyFromAtmosphere, environment, device)
+            Vertices = vertices
+            DebugVertices = debugVertices
+            Indices = indices
+            Terrain = terrain
+            Textures = ContentLoader.loadTextures _this
+            PerlinTexture3D = perlinTexture3D
+            SphereVertices = sphereVerts
+            SphereIndices = sphereInds
+        }
 
     override _this.Update(gameTime) =
         let time = float32 gameTime.TotalGameTime.TotalSeconds
@@ -154,28 +169,28 @@ type LandGame() as _this =
     override _this.Draw(gameTime) =
         let time = (single gameTime.TotalGameTime.TotalMilliseconds) / 100.0f
 
-        water.Prepare view camera _this.DrawApartFromSky (sky.DrawSkyDome world projection lightDirection camera)
+        water.Prepare view camera _this.DrawApartFromSky (gameContent.Sky.DrawSkyDome world projection lightDirection camera)
 
         device.SetRenderTarget(hdrRenderTarget)
 
         do device.Clear(Color.Black)
         _this.DrawApartFromSky false view noClipPlane
         water.DrawWater time world view projection lightDirection camera
-        sky.DrawSkyDome world projection lightDirection camera view
+        gameContent.Sky.DrawSkyDome world projection lightDirection camera view
         //_this.DrawDebug perlinTexture3D
 
         device.SetRenderTarget(null)
 
-        let effect = effects.Hdr
+        let effect = gameContent.Effects.Hdr
         effect.CurrentTechnique <- effect.Techniques.["Plain"]
 
-        spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, 
+        gameContent.SpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, 
             SamplerState.LinearClamp, DepthStencilState.Default, 
             RasterizerState.CullNone, effect)
  
-        spriteBatch.Draw(hdrRenderTarget, new Rectangle(0, 0, device.PresentationParameters.BackBufferWidth, device.PresentationParameters.BackBufferHeight), Color.White);
+        gameContent.SpriteBatch.Draw(hdrRenderTarget, new Rectangle(0, 0, device.PresentationParameters.BackBufferWidth, device.PresentationParameters.BackBufferHeight), Color.White);
  
-        spriteBatch.End();
+        gameContent.SpriteBatch.End();
 
         do base.Draw(gameTime)
 
@@ -184,7 +199,7 @@ type LandGame() as _this =
         _this.DrawSphere viewMatrix
 
     member _this.DrawTerrain (x: bool) (viewMatrix: Matrix) (clipPlane: Vector4) =
-        let effect = effects.GroundFromAtmosphere
+        let effect = gameContent.Effects.GroundFromAtmosphere
 
         effect.CurrentTechnique <- effect.Techniques.["GroundFromAtmosphere"]
         effect.Parameters.["xWorld"].SetValue(world)
@@ -192,30 +207,30 @@ type LandGame() as _this =
         effect.Parameters.["xProjection"].SetValue(projection)
         effect.Parameters.["xCameraPosition"].SetValue(camera.Position)
         effect.Parameters.["xLightDirection"].SetValue(lightDirection)
-        effect.Parameters.["xGrassTexture"].SetValue(textures.Grass)
-        effect.Parameters.["xRockTexture"].SetValue(textures.Rock)
-        effect.Parameters.["xSandTexture"].SetValue(textures.Sand)
-        effect.Parameters.["xSnowTexture"].SetValue(textures.Snow)
+        effect.Parameters.["xGrassTexture"].SetValue(gameContent.Textures.Grass)
+        effect.Parameters.["xRockTexture"].SetValue(gameContent.Textures.Rock)
+        effect.Parameters.["xSandTexture"].SetValue(gameContent.Textures.Sand)
+        effect.Parameters.["xSnowTexture"].SetValue(gameContent.Textures.Snow)
         effect.Parameters.["xClipPlane"].SetValue(clipPlane)
         effect.Parameters.["xAmbient"].SetValue(0.5f)
         effect.Parameters.["xAlphaAfterWaterDepthWeighting"].SetValue(x)
         effect.Parameters.["xMinMaxHeight"].SetValue(minMaxTerrainHeight)
         effect.Parameters.["xPerlinSize3D"].SetValue(15.0f)
-        effect.Parameters.["xRandomTexture3D"].SetValue(perlinTexture3D)
+        effect.Parameters.["xRandomTexture3D"].SetValue(gameContent.PerlinTexture3D)
 
-        environment.Atmosphere.ApplyToEffect effect
-        environment.Water.ApplyToGroundEffect effect
+        gameContent.Environment.Atmosphere.ApplyToEffect effect
+        gameContent.Environment.Water.ApplyToGroundEffect effect
 
         device.BlendState <- BlendState.Opaque
 
         effect.CurrentTechnique.Passes |> Seq.iter
             (fun pass ->
                 pass.Apply()
-                device.DrawUserIndexedPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, vertices, 0, vertices.Length, indices, 0, indices.Length / 3)
+                device.DrawUserIndexedPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, gameContent.Vertices, 0, gameContent.Vertices.Length, gameContent.Indices, 0, gameContent.Indices.Length / 3)
             )
 
     member _this.DrawSphere (viewMatrix: Matrix) =
-        let effect = effects.GroundFromAtmosphere
+        let effect = gameContent.Effects.GroundFromAtmosphere
 
         let sphereWorld = Matrix.Multiply(Matrix.CreateTranslation(0.0f, 1.5f, 0.0f), Matrix.CreateScale(10.0f))
         effect.CurrentTechnique <- effect.Techniques.["Coloured"]
@@ -228,16 +243,16 @@ type LandGame() as _this =
         effect.CurrentTechnique.Passes |> Seq.iter
             (fun pass ->
                 pass.Apply()
-                device.DrawUserIndexedPrimitives<VertexPositionNormal>(PrimitiveType.TriangleList, sphereVertices, 0, sphereVertices.Length, sphereIndices, 0, sphereIndices.Length / 3)
+                device.DrawUserIndexedPrimitives<VertexPositionNormal>(PrimitiveType.TriangleList, gameContent.SphereVertices, 0, gameContent.SphereVertices.Length, gameContent.SphereIndices, 0, gameContent.SphereIndices.Length / 3)
             )
 
     member _this.DrawDebug (texture: Texture2D) =
-        let effect = effects.Effect
+        let effect = gameContent.Effects.Effect
         effect.CurrentTechnique <- effect.Techniques.["Debug"]
         effect.Parameters.["xDebugTexture"].SetValue(texture)
 
         effect.CurrentTechnique.Passes |> Seq.iter
             (fun pass ->
                 pass.Apply()
-                device.DrawUserPrimitives<VertexPositionTexture>(PrimitiveType.TriangleList, debugVertices, 0, debugVertices.Length / 3)
+                device.DrawUserPrimitives<VertexPositionTexture>(PrimitiveType.TriangleList, gameContent.DebugVertices, 0, gameContent.DebugVertices.Length / 3)
             )
