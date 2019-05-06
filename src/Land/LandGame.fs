@@ -31,20 +31,25 @@ type Content =
         SphereIndices: int[]
     }
 
+type State =
+    {
+        LightDirection: Vector3
+        Camera: FreeCamera
+    }
+
 type LandGame() as _this =
     inherit Game()
     let graphics = new GraphicsDeviceManager(_this)
     let mutable gameContent = Unchecked.defaultof<Content>
+    let mutable gameState = Unchecked.defaultof<State>
     let mutable water = Unchecked.defaultof<Water>
     let mutable world = Unchecked.defaultof<Matrix>
     let mutable view = Unchecked.defaultof<Matrix>
     let mutable reflectionView = Unchecked.defaultof<Matrix>
     let mutable projection = Unchecked.defaultof<Matrix>
     let mutable device = Unchecked.defaultof<GraphicsDevice>
-    let mutable lightDirection = Unchecked.defaultof<Vector3>
     let mutable hdrRenderTarget = Unchecked.defaultof<RenderTarget2D>
     let mutable noClipPlane = Unchecked.defaultof<Vector4>
-    let mutable camera = Unchecked.defaultof<FreeCamera>
     let mutable input = Unchecked.defaultof<Input>
     let mutable originalMouseState = Unchecked.defaultof<MouseState>
     let mutable minMaxTerrainHeight = Unchecked.defaultof<Vector2>
@@ -81,17 +86,10 @@ type LandGame() as _this =
         world <- Matrix.Identity
         projection <- Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 5000.0f)
 
-        let dir = Vector3(0.0f, -0.5f, -1.0f)
-        dir.Normalize()
-        lightDirection <- dir
-
         let pp = device.PresentationParameters
         hdrRenderTarget <- new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)
         noClipPlane <- Vector4.Zero
 
-        let startPosition = Vector3(0.0f, 10.0f, -(single terrain.Size) / 2.0f)
-
-        camera <- FreeCamera(startPosition, 0.0f, 0.0f)
         Mouse.SetPosition(_this.Window.ClientBounds.Width / 2, _this.Window.ClientBounds.Height / 2)
         originalMouseState <- Mouse.GetState()
         input <- Input(Keyboard.GetState(), Keyboard.GetState(), Mouse.GetState(), Mouse.GetState(), _this.Window, originalMouseState, 0, 0)
@@ -145,6 +143,11 @@ type LandGame() as _this =
             SphereIndices = sphereInds
         }
 
+        gameState <- {
+            LightDirection = Vector3.Normalize(Vector3(0.0f, -0.5f, -1.0f))
+            Camera = FreeCamera(Vector3(0.0f, 10.0f, -(single terrain.Size) / 2.0f), 0.0f, 0.0f)
+        }
+
     override _this.Update(gameTime) =
         let time = float32 gameTime.TotalGameTime.TotalSeconds
 
@@ -152,7 +155,7 @@ type LandGame() as _this =
 
         if input.Quit then _this.Exit()
 
-        camera <- camera.Updated(input, time)
+        let camera = gameState.Camera.Updated(input, time)
 
         view <- camera.ViewMatrix
 
@@ -161,22 +164,30 @@ type LandGame() as _this =
         let invUpVector = Vector3.Cross(camera.RightDirection, reflectionCameraLookAt - reflectionCameraAt)
         reflectionView <- Matrix.CreateLookAt(reflectionCameraAt, reflectionCameraLookAt, invUpVector)
 
-        if input.PageDown then lightDirection <- Vector3.Transform(lightDirection, Matrix.CreateRotationX(0.003f))
-        if input.PageUp then lightDirection <- Vector3.Transform(lightDirection, Matrix.CreateRotationX(-0.003f))
+        let lightDirection =
+            match input.PageDown, input.PageUp with
+            | true, false -> Vector3.Transform(gameState.LightDirection, Matrix.CreateRotationX(0.003f))
+            | false, true -> Vector3.Transform(gameState.LightDirection, Matrix.CreateRotationX(-0.003f))
+            | _ -> gameState.LightDirection
+        
+        gameState <- {
+            Camera = camera
+            LightDirection = lightDirection
+        }
 
         do base.Update(gameTime)
 
     override _this.Draw(gameTime) =
         let time = (single gameTime.TotalGameTime.TotalMilliseconds) / 100.0f
 
-        water.Prepare view camera _this.DrawApartFromSky (gameContent.Sky.DrawSkyDome world projection lightDirection camera)
+        water.Prepare view gameState.Camera _this.DrawApartFromSky (gameContent.Sky.DrawSkyDome world projection gameState.LightDirection gameState.Camera)
 
         device.SetRenderTarget(hdrRenderTarget)
 
         do device.Clear(Color.Black)
         _this.DrawApartFromSky false view noClipPlane
-        water.DrawWater time world view projection lightDirection camera
-        gameContent.Sky.DrawSkyDome world projection lightDirection camera view
+        water.DrawWater time world view projection gameState.LightDirection gameState.Camera
+        gameContent.Sky.DrawSkyDome world projection gameState.LightDirection gameState.Camera view
         //_this.DrawDebug perlinTexture3D
 
         device.SetRenderTarget(null)
@@ -205,8 +216,8 @@ type LandGame() as _this =
         effect.Parameters.["xWorld"].SetValue(world)
         effect.Parameters.["xView"].SetValue(viewMatrix)
         effect.Parameters.["xProjection"].SetValue(projection)
-        effect.Parameters.["xCameraPosition"].SetValue(camera.Position)
-        effect.Parameters.["xLightDirection"].SetValue(lightDirection)
+        effect.Parameters.["xCameraPosition"].SetValue(gameState.Camera.Position)
+        effect.Parameters.["xLightDirection"].SetValue(gameState.LightDirection)
         effect.Parameters.["xGrassTexture"].SetValue(gameContent.Textures.Grass)
         effect.Parameters.["xRockTexture"].SetValue(gameContent.Textures.Rock)
         effect.Parameters.["xSandTexture"].SetValue(gameContent.Textures.Sand)
@@ -237,7 +248,7 @@ type LandGame() as _this =
         effect.Parameters.["xWorld"].SetValue(sphereWorld)
         effect.Parameters.["xView"].SetValue(viewMatrix)
         effect.Parameters.["xProjection"].SetValue(projection)
-        effect.Parameters.["xLightDirection"].SetValue(lightDirection)
+        effect.Parameters.["xLightDirection"].SetValue(gameState.LightDirection)
         effect.Parameters.["xAmbient"].SetValue(0.5f)
         
         effect.CurrentTechnique.Passes |> Seq.iter
