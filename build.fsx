@@ -12,7 +12,7 @@ open Fake.IO.Globbing.Operators
 
 // Directories
 let intermediateContentDir = "./intermediateContent"
-let contentDir = "./Land"
+let contentDir = "./src/Land"
 let deployDir = "./deploy/"
 
 // Filesets
@@ -47,7 +47,7 @@ Target.create "Build" (fun _ ->
 
 Target.description "Running application"
 Target.create "Run" (fun _ ->
-    CreateProcess.fromRawCommand "Land/bin/Release/net471/Land.exe" []
+    CreateProcess.fromRawCommand "src/Land/bin/Release/net471/Land.exe" []
     |> Proc.startRawSync
     |> ignore
     Fake.Core.Process.setKillCreatedProcesses false)
@@ -57,9 +57,9 @@ Target.create "Run" (fun _ ->
 open Fake.Core.TargetOperators
 
 "Clean"
-    ==> "BuildContent"
-    ==> "Build"
-    ==> "Run"
+==> "BuildContent"
+==> "Build"
+==> "Run"
 
 // start build
 Target.runOrDefault "Build"
