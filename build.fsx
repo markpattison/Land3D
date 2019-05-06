@@ -40,13 +40,13 @@ Target.create "BuildContent" (fun _ ->
             }))
 
 Target.description "Building application"
-Target.create "BuildApp" (fun _ ->
+Target.create "Build" (fun _ ->
     appReferences
         |> Seq.iter (Fake.DotNet.DotNet.build id)
 )
 
 Target.description "Running application"
-Target.create "RunApp" (fun _ ->
+Target.create "Run" (fun _ ->
     CreateProcess.fromRawCommand "Land/bin/Release/net471/Land.exe" []
     |> Proc.startRawSync
     |> ignore
@@ -58,8 +58,8 @@ open Fake.Core.TargetOperators
 
 "Clean"
     ==> "BuildContent"
-    ==> "BuildApp"
-    ==> "RunApp"
+    ==> "Build"
+    ==> "Run"
 
 // start build
-Target.runOrDefault "BuildApp"
+Target.runOrDefault "Build"
