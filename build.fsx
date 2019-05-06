@@ -1,15 +1,18 @@
-﻿// include Fake libs
-#r "packages/FAKE/tools/FakeLib.dll"
+﻿#r "paket: groupref Build //"
+#load "./.fake/build.fsx/intellisense.fsx"
+#if !FAKE
+  #r "netstandard"
+#endif
+
 #load "MonoGameContent.fsx"
 
 open System
-open Fake
-open MonoGameContent
+open Fake.Core
+open Fake.IO.Globbing.Operators
 
 // Directories
 let intermediateContentDir = "./intermediateContent"
 let contentDir = "./Land"
-let buildDir  = "./build/"
 let deployDir = "./deploy/"
 
 // Filesets
@@ -22,38 +25,41 @@ let contentFiles =
         ++ "**/*.dds"
 
 // Targets
-Target "Clean" (fun _ -> 
-    CleanDirs [buildDir; deployDir]
+Target.description "Cleaning directories"
+Target.create "Clean" (fun _ -> 
+    Fake.IO.Shell.cleanDirs [ deployDir ]
 )
 
-let quoted dir = "\"" + dir + "\""
-
-Target "BuildContent" (fun _ ->
+Target.description "Building MonoGame content"
+Target.create "BuildContent" (fun _ ->
     contentFiles
-        |> MonoGameContent (fun p ->
+        |> MonoGameContent.buildMonoGameContent (fun p ->
             { p with
                 OutputDir = contentDir;
                 IntermediateDir = intermediateContentDir;
             }))
 
-Target "BuildApp" (fun _ ->
+Target.description "Building application"
+Target.create "BuildApp" (fun _ ->
     appReferences
-        |> MSBuildDebug buildDir "Build"
-        |> Log "AppBuild-Output: "
+        |> Seq.iter (Fake.DotNet.DotNet.build id)
 )
 
-Target "RunApp" (fun _ ->
-    ExecProcess (fun info ->
-        info.FileName <- buildDir + @"Land.exe"
-        info.WorkingDirectory <- buildDir)
-        (TimeSpan.FromDays 1.0)
-    |> ignore)
+Target.description "Running application"
+Target.create "RunApp" (fun _ ->
+    CreateProcess.fromRawCommand "Land/bin/Release/net471/Land.exe" []
+    |> Proc.startRawSync
+    |> ignore
+    Fake.Core.Process.setKillCreatedProcesses false)
 
 // Build order
+
+open Fake.Core.TargetOperators
+
 "Clean"
     ==> "BuildContent"
     ==> "BuildApp"
     ==> "RunApp"
 
 // start build
-RunTargetOrDefault "BuildApp"
+Target.runOrDefault "BuildApp"
