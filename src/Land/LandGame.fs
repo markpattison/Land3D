@@ -43,8 +43,6 @@ type LandGame() as _this =
     let mutable gameContent = Unchecked.defaultof<Content>
     let mutable gameState = Unchecked.defaultof<State>
     let mutable water = Unchecked.defaultof<Water>
-    let mutable world = Unchecked.defaultof<Matrix>
-    let mutable view = Unchecked.defaultof<Matrix>
     let mutable reflectionView = Unchecked.defaultof<Matrix>
     let mutable projection = Unchecked.defaultof<Matrix>
     let mutable device = Unchecked.defaultof<GraphicsDevice>
@@ -83,7 +81,6 @@ type LandGame() as _this =
         let environment = ContentLoader.loadEnvironment
 
         let terrain, vertices, indices = createTerrain
-        world <- Matrix.Identity
         projection <- Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 5000.0f)
 
         let pp = device.PresentationParameters
@@ -157,8 +154,6 @@ type LandGame() as _this =
 
         let camera = gameState.Camera.Updated(input, time)
 
-        view <- camera.ViewMatrix
-
         let reflectionCameraAt = Vector3(camera.Position.X, -camera.Position.Y, camera.Position.Z)
         let reflectionCameraLookAt = Vector3(camera.LookAt.X, -camera.LookAt.Y, camera.LookAt.Z)
         let invUpVector = Vector3.Cross(camera.RightDirection, reflectionCameraLookAt - reflectionCameraAt)
@@ -180,12 +175,15 @@ type LandGame() as _this =
     override _this.Draw(gameTime) =
         let time = (single gameTime.TotalGameTime.TotalMilliseconds) / 100.0f
 
-        water.Prepare view gameState.Camera _this.DrawApartFromSky (gameContent.Sky.DrawSkyDome world projection gameState.LightDirection gameState.Camera)
+        let view = gameState.Camera.ViewMatrix
+        let world = Matrix.Identity
+
+        water.Prepare view world gameState.Camera _this.DrawApartFromSky (gameContent.Sky.DrawSkyDome world projection gameState.LightDirection gameState.Camera)
 
         device.SetRenderTarget(hdrRenderTarget)
 
         do device.Clear(Color.Black)
-        _this.DrawApartFromSky false view noClipPlane
+        _this.DrawApartFromSky false view world noClipPlane
         water.DrawWater time world view projection gameState.LightDirection gameState.Camera
         gameContent.Sky.DrawSkyDome world projection gameState.LightDirection gameState.Camera view
         //_this.DrawDebug perlinTexture3D
@@ -205,15 +203,15 @@ type LandGame() as _this =
 
         do base.Draw(gameTime)
 
-    member _this.DrawApartFromSky x (viewMatrix: Matrix) (clipPlane: Vector4) =
-        _this.DrawTerrain x viewMatrix clipPlane
+    member _this.DrawApartFromSky x (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane: Vector4) =
+        _this.DrawTerrain x viewMatrix worldMatrix clipPlane
         _this.DrawSphere viewMatrix
 
-    member _this.DrawTerrain (x: bool) (viewMatrix: Matrix) (clipPlane: Vector4) =
+    member _this.DrawTerrain (x: bool) (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane: Vector4) =
         let effect = gameContent.Effects.GroundFromAtmosphere
 
         effect.CurrentTechnique <- effect.Techniques.["GroundFromAtmosphere"]
-        effect.Parameters.["xWorld"].SetValue(world)
+        effect.Parameters.["xWorld"].SetValue(worldMatrix)
         effect.Parameters.["xView"].SetValue(viewMatrix)
         effect.Parameters.["xProjection"].SetValue(projection)
         effect.Parameters.["xCameraPosition"].SetValue(gameState.Camera.Position)
