@@ -47,7 +47,6 @@
     <Compile Include="ContentLoader.fs" />
     <Compile Include="Update.fs" />
     <Compile Include="Draw.fs" />
-    <Compile Include="LandGame.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
