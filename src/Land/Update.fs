@@ -9,10 +9,6 @@ let update (gameTime: GameTime) (input: Input) gameState =
 
     let camera = gameState.Camera.Updated(input, time)
 
-    let reflectionCameraAt = Vector3(camera.Position.X, -camera.Position.Y, camera.Position.Z)
-    let reflectionCameraLookAt = Vector3(camera.LookAt.X, -camera.LookAt.Y, camera.LookAt.Z)
-    let invUpVector = Vector3.Cross(camera.RightDirection, reflectionCameraLookAt - reflectionCameraAt)
-
     let lightDirection =
         match input.PageDown, input.PageUp with
         | true, false -> Vector3.Transform(gameState.LightDirection, Matrix.CreateRotationX(0.003f))
