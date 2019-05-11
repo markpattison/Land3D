@@ -47,7 +47,6 @@ type LandGame() as _this =
     let mutable projection = Unchecked.defaultof<Matrix>
     let mutable device = Unchecked.defaultof<GraphicsDevice>
     let mutable hdrRenderTarget = Unchecked.defaultof<RenderTarget2D>
-    let mutable noClipPlane = Unchecked.defaultof<Vector4>
     let mutable input = Unchecked.defaultof<Input>
     let mutable originalMouseState = Unchecked.defaultof<MouseState>
     do graphics.GraphicsProfile <- GraphicsProfile.HiDef
@@ -84,7 +83,6 @@ type LandGame() as _this =
 
         let pp = device.PresentationParameters
         hdrRenderTarget <- new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)
-        noClipPlane <- Vector4.Zero
 
         Mouse.SetPosition(_this.Window.ClientBounds.Width / 2, _this.Window.ClientBounds.Height / 2)
         originalMouseState <- Mouse.GetState()
@@ -181,7 +179,7 @@ type LandGame() as _this =
         device.SetRenderTarget(hdrRenderTarget)
 
         do device.Clear(Color.Black)
-        _this.DrawApartFromSky false view world noClipPlane
+        _this.DrawApartFromSky false view world Vector4.Zero // no clip plane
         gameContent.Water.DrawWater time world view projection gameState.LightDirection gameState.Camera waterReflectionView
         gameContent.Sky.DrawSkyDome world projection gameState.LightDirection gameState.Camera view
         //_this.DrawDebug perlinTexture3D
