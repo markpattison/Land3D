@@ -5,40 +5,13 @@ open System
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
-open VertexPositionNormal
 open Sphere
 open FreeCamera
 open Input
 open Terrain
-open ContentLoader
-open EnvironmentParameters
 open Water
 open Sky
-
-type Content =
-    {
-        SpriteBatch: SpriteBatch
-        Effects: Effects
-        Projection: Matrix
-        Environment: EnvironmentParameters
-        Sky: Sky
-        Water: Water
-        Vertices: VertexPositionNormalTexture[]
-        DebugVertices: VertexPositionTexture[]
-        Indices: int[]
-        Terrain: Terrain
-        MinMaxTerrainHeight: Vector2
-        Textures: Textures
-        PerlinTexture3D: Texture3D
-        SphereVertices: VertexPositionNormal[]
-        SphereIndices: int[]
-    }
-
-type State =
-    {
-        LightDirection: Vector3
-        Camera: FreeCamera
-    }
+open Game1.Types
 
 type LandGame() as _this =
     inherit Game()
@@ -46,7 +19,6 @@ type LandGame() as _this =
     let mutable gameContent = Unchecked.defaultof<Content>
     let mutable gameState = Unchecked.defaultof<State>
     let mutable device = Unchecked.defaultof<GraphicsDevice>
-    let mutable hdrRenderTarget = Unchecked.defaultof<RenderTarget2D>
     let mutable input = Unchecked.defaultof<Input>
     let mutable originalMouseState = Unchecked.defaultof<MouseState>
     do graphics.GraphicsProfile <- GraphicsProfile.HiDef
@@ -81,7 +53,6 @@ type LandGame() as _this =
         let terrain, vertices, indices, minMaxTerrainHeight = createTerrain
 
         let pp = device.PresentationParameters
-        hdrRenderTarget <- new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)
 
         Mouse.SetPosition(_this.Window.ClientBounds.Width / 2, _this.Window.ClientBounds.Height / 2)
         originalMouseState <- Mouse.GetState()
@@ -123,6 +94,7 @@ type LandGame() as _this =
             SpriteBatch = new SpriteBatch(device)
             Effects = effects
             Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 5000.0f)
+            HdrRenderTarget = new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)
             Environment = environment
             Sky = Sky(effects.SkyFromAtmosphere, environment, device)
             Water = Water(effects.GroundFromAtmosphere, perlinTexture3D, environment, device)
@@ -169,95 +141,7 @@ type LandGame() as _this =
         do base.Update(gameTime)
 
     override _this.Draw(gameTime) =
-        let time = (single gameTime.TotalGameTime.TotalMilliseconds) / 100.0f
-
-        let view = gameState.Camera.ViewMatrix
-        let world = Matrix.Identity
-
-        let waterReflectionView = gameContent.Water.Prepare view world gameState.Camera _this.DrawApartFromSky (gameContent.Sky.DrawSkyDome world gameContent.Projection gameState.LightDirection gameState.Camera)
-
-        device.SetRenderTarget(hdrRenderTarget)
-
-        do device.Clear(Color.Black)
-        _this.DrawApartFromSky false view world Vector4.Zero // no clip plane
-        gameContent.Water.DrawWater time world view gameContent.Projection gameState.LightDirection gameState.Camera waterReflectionView
-        gameContent.Sky.DrawSkyDome world gameContent.Projection gameState.LightDirection gameState.Camera view
-        //_this.DrawDebug perlinTexture3D
-
-        device.SetRenderTarget(null)
-
-        let effect = gameContent.Effects.Hdr
-        effect.CurrentTechnique <- effect.Techniques.["Plain"]
-
-        gameContent.SpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, 
-            SamplerState.LinearClamp, DepthStencilState.Default, 
-            RasterizerState.CullNone, effect)
- 
-        gameContent.SpriteBatch.Draw(hdrRenderTarget, new Rectangle(0, 0, device.PresentationParameters.BackBufferWidth, device.PresentationParameters.BackBufferHeight), Color.White);
- 
-        gameContent.SpriteBatch.End();
+        Draw.draw gameTime device gameState gameContent
 
         do base.Draw(gameTime)
 
-    member _this.DrawApartFromSky x (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane: Vector4) =
-        _this.DrawTerrain x viewMatrix worldMatrix clipPlane
-        _this.DrawSphere viewMatrix
-
-    member _this.DrawTerrain (x: bool) (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane: Vector4) =
-        let effect = gameContent.Effects.GroundFromAtmosphere
-
-        effect.CurrentTechnique <- effect.Techniques.["GroundFromAtmosphere"]
-        effect.Parameters.["xWorld"].SetValue(worldMatrix)
-        effect.Parameters.["xView"].SetValue(viewMatrix)
-        effect.Parameters.["xProjection"].SetValue(gameContent.Projection)
-        effect.Parameters.["xCameraPosition"].SetValue(gameState.Camera.Position)
-        effect.Parameters.["xLightDirection"].SetValue(gameState.LightDirection)
-        effect.Parameters.["xGrassTexture"].SetValue(gameContent.Textures.Grass)
-        effect.Parameters.["xRockTexture"].SetValue(gameContent.Textures.Rock)
-        effect.Parameters.["xSandTexture"].SetValue(gameContent.Textures.Sand)
-        effect.Parameters.["xSnowTexture"].SetValue(gameContent.Textures.Snow)
-        effect.Parameters.["xClipPlane"].SetValue(clipPlane)
-        effect.Parameters.["xAmbient"].SetValue(0.5f)
-        effect.Parameters.["xAlphaAfterWaterDepthWeighting"].SetValue(x)
-        effect.Parameters.["xMinMaxHeight"].SetValue(gameContent.MinMaxTerrainHeight)
-        effect.Parameters.["xPerlinSize3D"].SetValue(15.0f)
-        effect.Parameters.["xRandomTexture3D"].SetValue(gameContent.PerlinTexture3D)
-
-        gameContent.Environment.Atmosphere.ApplyToEffect effect
-        gameContent.Environment.Water.ApplyToGroundEffect effect
-
-        device.BlendState <- BlendState.Opaque
-
-        effect.CurrentTechnique.Passes |> Seq.iter
-            (fun pass ->
-                pass.Apply()
-                device.DrawUserIndexedPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, gameContent.Vertices, 0, gameContent.Vertices.Length, gameContent.Indices, 0, gameContent.Indices.Length / 3)
-            )
-
-    member _this.DrawSphere (viewMatrix: Matrix) =
-        let effect = gameContent.Effects.GroundFromAtmosphere
-
-        let sphereWorld = Matrix.Multiply(Matrix.CreateTranslation(0.0f, 1.5f, 0.0f), Matrix.CreateScale(10.0f))
-        effect.CurrentTechnique <- effect.Techniques.["Coloured"]
-        effect.Parameters.["xWorld"].SetValue(sphereWorld)
-        effect.Parameters.["xView"].SetValue(viewMatrix)
-        effect.Parameters.["xProjection"].SetValue(gameContent.Projection)
-        effect.Parameters.["xLightDirection"].SetValue(gameState.LightDirection)
-        effect.Parameters.["xAmbient"].SetValue(0.5f)
-        
-        effect.CurrentTechnique.Passes |> Seq.iter
-            (fun pass ->
-                pass.Apply()
-                device.DrawUserIndexedPrimitives<VertexPositionNormal>(PrimitiveType.TriangleList, gameContent.SphereVertices, 0, gameContent.SphereVertices.Length, gameContent.SphereIndices, 0, gameContent.SphereIndices.Length / 3)
-            )
-
-    member _this.DrawDebug (texture: Texture2D) =
-        let effect = gameContent.Effects.Effect
-        effect.CurrentTechnique <- effect.Techniques.["Debug"]
-        effect.Parameters.["xDebugTexture"].SetValue(texture)
-
-        effect.CurrentTechnique.Passes |> Seq.iter
-            (fun pass ->
-                pass.Apply()
-                device.DrawUserPrimitives<VertexPositionTexture>(PrimitiveType.TriangleList, gameContent.DebugVertices, 0, gameContent.DebugVertices.Length / 3)
-            )
