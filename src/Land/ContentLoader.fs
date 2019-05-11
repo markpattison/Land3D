@@ -1,4 +1,4 @@
-﻿module ContentLoader
+﻿module Land.ContentLoader
 
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
@@ -8,7 +8,6 @@ open Terrain
 open Sphere
 open Water
 open Sky
-open Game1.Types
 
 let loadEffects (content: Content.ContentManager) =
     {

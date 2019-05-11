@@ -1,4 +1,4 @@
-﻿namespace Game1.Types
+﻿namespace Land
 
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics

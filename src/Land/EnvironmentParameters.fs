@@ -1,4 +1,4 @@
-﻿module EnvironmentParameters
+﻿module Land.EnvironmentParameters
 
 open System
 open Microsoft.Xna.Framework

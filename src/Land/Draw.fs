@@ -1,10 +1,9 @@
-﻿module Game1.Draw
+﻿module Land.Draw
 
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
 open VertexPositionNormal
-open Game1.Types
 
 let drawTerrain (x: bool) (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane: Vector4) (device: GraphicsDevice) (gameState: State) (gameContent: Content) =
     let effect = gameContent.Effects.GroundFromAtmosphere

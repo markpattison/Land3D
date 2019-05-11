@@ -1,4 +1,4 @@
-﻿module Input
+﻿module Land.Input
 
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Input

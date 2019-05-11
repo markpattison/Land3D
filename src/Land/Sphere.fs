@@ -1,6 +1,5 @@
-﻿module Sphere
+﻿module Land.Sphere
 
-open System
 open Microsoft.Xna.Framework
 open VertexPositionNormal
 

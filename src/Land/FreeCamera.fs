@@ -1,4 +1,4 @@
-﻿module FreeCamera
+﻿module Land.FreeCamera
 
 open Microsoft.Xna.Framework
 

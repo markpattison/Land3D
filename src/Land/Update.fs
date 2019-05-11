@@ -1,9 +1,8 @@
-﻿module Game1.Update
+﻿module Land.Update
 
 open Microsoft.Xna.Framework
 
 open Input
-open Game1.Types
 
 let update (gameTime: GameTime) (input: Input) gameState =
     let time = float32 gameTime.TotalGameTime.TotalSeconds

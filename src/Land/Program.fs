@@ -1,6 +1,6 @@
 ﻿module Program
 
-open Game1
+open Land
 
 [<EntryPoint>]
 let Main args =

@@ -1,17 +1,9 @@
-﻿namespace Game1
-
-open System
-
+﻿namespace Land
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
-open Sphere
 open FreeCamera
 open Input
-open Terrain
-open Water
-open Sky
-open Game1.Types
 
 type LandGame() as _this =
     inherit Game()

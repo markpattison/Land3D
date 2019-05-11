@@ -1,4 +1,4 @@
-﻿module Sky
+﻿module Land.Sky
 
 open System
 open Microsoft.Xna.Framework

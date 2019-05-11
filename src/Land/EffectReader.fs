@@ -1,4 +1,4 @@
-﻿module EffectReader
+﻿module Land.EffectReader
 
 open System.IO
 open System.Reflection

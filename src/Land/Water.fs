@@ -1,4 +1,4 @@
-﻿module Water
+﻿module Land.Water
 
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
