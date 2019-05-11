@@ -44,7 +44,6 @@ type LandGame() as _this =
     let graphics = new GraphicsDeviceManager(_this)
     let mutable gameContent = Unchecked.defaultof<Content>
     let mutable gameState = Unchecked.defaultof<State>
-    let mutable reflectionView = Unchecked.defaultof<Matrix>
     let mutable projection = Unchecked.defaultof<Matrix>
     let mutable device = Unchecked.defaultof<GraphicsDevice>
     let mutable hdrRenderTarget = Unchecked.defaultof<RenderTarget2D>
@@ -157,7 +156,6 @@ type LandGame() as _this =
         let reflectionCameraAt = Vector3(camera.Position.X, -camera.Position.Y, camera.Position.Z)
         let reflectionCameraLookAt = Vector3(camera.LookAt.X, -camera.LookAt.Y, camera.LookAt.Z)
         let invUpVector = Vector3.Cross(camera.RightDirection, reflectionCameraLookAt - reflectionCameraAt)
-        reflectionView <- Matrix.CreateLookAt(reflectionCameraAt, reflectionCameraLookAt, invUpVector)
 
         let lightDirection =
             match input.PageDown, input.PageUp with
