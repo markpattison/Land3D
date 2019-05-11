@@ -21,6 +21,7 @@ type Content =
         Effects: Effects
         Environment: EnvironmentParameters
         Sky: Sky
+        Water: Water
         Vertices: VertexPositionNormalTexture[]
         DebugVertices: VertexPositionTexture[]
         Indices: int[]
@@ -42,7 +43,6 @@ type LandGame() as _this =
     let graphics = new GraphicsDeviceManager(_this)
     let mutable gameContent = Unchecked.defaultof<Content>
     let mutable gameState = Unchecked.defaultof<State>
-    let mutable water = Unchecked.defaultof<Water>
     let mutable reflectionView = Unchecked.defaultof<Matrix>
     let mutable projection = Unchecked.defaultof<Matrix>
     let mutable device = Unchecked.defaultof<GraphicsDevice>
@@ -123,13 +123,12 @@ type LandGame() as _this =
 
         let effects = ContentLoader.loadEffects _this
 
-        water <- new Water(effects.GroundFromAtmosphere, perlinTexture3D, environment, device)
-
         gameContent <- {
             SpriteBatch = new SpriteBatch(device)
             Effects = effects
             Environment = environment
             Sky = Sky(effects.SkyFromAtmosphere, environment, device)
+            Water = Water(effects.GroundFromAtmosphere, perlinTexture3D, environment, device)
             Vertices = vertices
             DebugVertices = debugVertices
             Indices = indices
@@ -178,13 +177,13 @@ type LandGame() as _this =
         let view = gameState.Camera.ViewMatrix
         let world = Matrix.Identity
 
-        water.Prepare view world gameState.Camera _this.DrawApartFromSky (gameContent.Sky.DrawSkyDome world projection gameState.LightDirection gameState.Camera)
+        let waterReflectionView = gameContent.Water.Prepare view world gameState.Camera _this.DrawApartFromSky (gameContent.Sky.DrawSkyDome world projection gameState.LightDirection gameState.Camera)
 
         device.SetRenderTarget(hdrRenderTarget)
 
         do device.Clear(Color.Black)
         _this.DrawApartFromSky false view world noClipPlane
-        water.DrawWater time world view projection gameState.LightDirection gameState.Camera
+        gameContent.Water.DrawWater time world view projection gameState.LightDirection gameState.Camera waterReflectionView
         gameContent.Sky.DrawSkyDome world projection gameState.LightDirection gameState.Camera view
         //_this.DrawDebug perlinTexture3D
 

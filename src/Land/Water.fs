@@ -21,20 +21,20 @@ type Water(effect: Effect, perlinTexture3D: Texture3D, environment: EnvironmentP
             VertexPositionTexture(Vector3( waterSize, 0.0f,  waterSize), new Vector2(1.0f, 1.0f));
             VertexPositionTexture(Vector3(-waterSize, 0.0f,  waterSize), new Vector2(0.0f, 1.0f));
         |]
-    let mutable reflectionView = Unchecked.defaultof<Matrix>
+    
+    let refractionClipPlane = Vector4(Vector3.Down, -0.00001f)
+    let reflectionClipPlane = Vector4(Vector3.Up, 0.00001f)
 
     let drawRefractionMap drawTerrain view world =
-        let clipPlane = Vector4(Vector3.Down, -0.00001f)
         device.SetRenderTarget(refractionRenderTarget)
         device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
-        drawTerrain view world clipPlane
+        drawTerrain view world refractionClipPlane
         device.SetRenderTarget(null)
 
     let drawReflectionMap drawTerrain drawSkyDome reflectionView world =
-        let clipPlane = Vector4(Vector3.Up, 0.00001f)
         device.SetRenderTarget(reflectionRenderTarget)
         device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
-        drawTerrain reflectionView world clipPlane
+        drawTerrain reflectionView world reflectionClipPlane
         drawSkyDome reflectionView
         device.SetRenderTarget(null)
 
@@ -48,11 +48,12 @@ type Water(effect: Effect, perlinTexture3D: Texture3D, environment: EnvironmentP
     member _this.ReflectionTarget = reflectionRenderTarget
 
     member _this.Prepare view world camera drawTerrain drawSkyDome =
-        reflectionView <- calculateReflectionView camera
+        let reflectionView = calculateReflectionView camera
         drawRefractionMap (drawTerrain true) view world
         drawReflectionMap (drawTerrain true) drawSkyDome reflectionView world
+        reflectionView
 
-    member _this.DrawWater (time: single) (world: Matrix) (view: Matrix) (projection: Matrix) (lightDirection: Vector3) (camera: FreeCamera) =
+    member _this.DrawWater (time: single) (world: Matrix) (view: Matrix) (projection: Matrix) (lightDirection: Vector3) (camera: FreeCamera) (reflectionView: Matrix) =
         effect.CurrentTechnique <- effect.Techniques.["Water"]
         effect.Parameters.["xWorld"].SetValue(world)
         effect.Parameters.["xView"].SetValue(view)
