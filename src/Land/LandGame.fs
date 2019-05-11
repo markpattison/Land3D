@@ -26,6 +26,7 @@ type Content =
         DebugVertices: VertexPositionTexture[]
         Indices: int[]
         Terrain: Terrain
+        MinMaxTerrainHeight: Vector2
         Textures: Textures
         PerlinTexture3D: Texture3D
         SphereVertices: VertexPositionNormal[]
@@ -50,7 +51,6 @@ type LandGame() as _this =
     let mutable noClipPlane = Unchecked.defaultof<Vector4>
     let mutable input = Unchecked.defaultof<Input>
     let mutable originalMouseState = Unchecked.defaultof<MouseState>
-    let mutable minMaxTerrainHeight = Unchecked.defaultof<Vector2>
     do graphics.GraphicsProfile <- GraphicsProfile.HiDef
     do graphics.PreferredBackBufferWidth <- 900
     do graphics.PreferredBackBufferHeight <- 700
@@ -66,10 +66,10 @@ type LandGame() as _this =
         do terrain.Normalize -5.0f 25.0f
         let vertices = GetVertices terrain
         let indices = GetIndices terrain.Size
-        minMaxTerrainHeight <-
+        let minMaxTerrainHeight =
             let (min, max) = terrain.MinMax()
             new Vector2(min, max)
-        (terrain, vertices, indices)
+        (terrain, vertices, indices, minMaxTerrainHeight)
 
     override _this.Initialize() =
         device <- base.GraphicsDevice
@@ -80,7 +80,7 @@ type LandGame() as _this =
     override _this.LoadContent() =
         let environment = ContentLoader.loadEnvironment
 
-        let terrain, vertices, indices = createTerrain
+        let terrain, vertices, indices, minMaxTerrainHeight = createTerrain
         projection <- Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 5000.0f)
 
         let pp = device.PresentationParameters
@@ -133,6 +133,7 @@ type LandGame() as _this =
             DebugVertices = debugVertices
             Indices = indices
             Terrain = terrain
+            MinMaxTerrainHeight = minMaxTerrainHeight
             Textures = ContentLoader.loadTextures _this
             PerlinTexture3D = perlinTexture3D
             SphereVertices = sphereVerts
@@ -222,7 +223,7 @@ type LandGame() as _this =
         effect.Parameters.["xClipPlane"].SetValue(clipPlane)
         effect.Parameters.["xAmbient"].SetValue(0.5f)
         effect.Parameters.["xAlphaAfterWaterDepthWeighting"].SetValue(x)
-        effect.Parameters.["xMinMaxHeight"].SetValue(minMaxTerrainHeight)
+        effect.Parameters.["xMinMaxHeight"].SetValue(gameContent.MinMaxTerrainHeight)
         effect.Parameters.["xPerlinSize3D"].SetValue(15.0f)
         effect.Parameters.["xRandomTexture3D"].SetValue(gameContent.PerlinTexture3D)
 
