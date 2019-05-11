@@ -6,10 +6,25 @@ open Microsoft.Xna.Framework.Graphics
 open VertexPositionNormal
 open FreeCamera
 open Terrain
-open ContentLoader
 open EnvironmentParameters
 open Water
 open Sky
+
+type Effects =
+    {
+        Effect: Effect;
+        Hdr: Effect;
+        SkyFromAtmosphere: Effect;
+        GroundFromAtmosphere: Effect
+    }
+
+type Textures =
+    {
+        Grass: Texture2D;
+        Rock: Texture2D;
+        Sand: Texture2D;
+        Snow: Texture2D;
+    }
 
 type Content =
     {
