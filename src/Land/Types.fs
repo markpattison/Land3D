@@ -1,14 +1,10 @@
 ﻿namespace Game1.Types
 
-open System
-
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
 open VertexPositionNormal
-open Sphere
 open FreeCamera
-open Input
 open Terrain
 open ContentLoader
 open EnvironmentParameters
@@ -39,5 +35,6 @@ type State =
     {
         LightDirection: Vector3
         Camera: FreeCamera
+        Exiting: bool
     }
 

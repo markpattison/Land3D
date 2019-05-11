@@ -112,31 +112,15 @@ type LandGame() as _this =
         gameState <- {
             LightDirection = Vector3.Normalize(Vector3(0.0f, -0.5f, -1.0f))
             Camera = FreeCamera(Vector3(0.0f, 10.0f, -(single terrain.Size) / 2.0f), 0.0f, 0.0f)
+            Exiting = false
         }
 
     override _this.Update(gameTime) =
-        let time = float32 gameTime.TotalGameTime.TotalSeconds
-
         input <- input.Updated(Keyboard.GetState(), Mouse.GetState(), _this.Window)
 
-        if input.Quit then _this.Exit()
+        gameState <- Update.update gameTime input gameState
 
-        let camera = gameState.Camera.Updated(input, time)
-
-        let reflectionCameraAt = Vector3(camera.Position.X, -camera.Position.Y, camera.Position.Z)
-        let reflectionCameraLookAt = Vector3(camera.LookAt.X, -camera.LookAt.Y, camera.LookAt.Z)
-        let invUpVector = Vector3.Cross(camera.RightDirection, reflectionCameraLookAt - reflectionCameraAt)
-
-        let lightDirection =
-            match input.PageDown, input.PageUp with
-            | true, false -> Vector3.Transform(gameState.LightDirection, Matrix.CreateRotationX(0.003f))
-            | false, true -> Vector3.Transform(gameState.LightDirection, Matrix.CreateRotationX(-0.003f))
-            | _ -> gameState.LightDirection
-        
-        gameState <- {
-            Camera = camera
-            LightDirection = lightDirection
-        }
+        if gameState.Exiting then _this.Exit()
 
         do base.Update(gameTime)
 

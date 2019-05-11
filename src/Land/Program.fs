@@ -1,6 +1,5 @@
 ﻿module Program
 
-open System
 open Game1
 
 [<EntryPoint>]
