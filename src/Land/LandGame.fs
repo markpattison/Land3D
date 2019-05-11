@@ -19,6 +19,7 @@ type Content =
     {
         SpriteBatch: SpriteBatch
         Effects: Effects
+        Projection: Matrix
         Environment: EnvironmentParameters
         Sky: Sky
         Water: Water
@@ -44,7 +45,6 @@ type LandGame() as _this =
     let graphics = new GraphicsDeviceManager(_this)
     let mutable gameContent = Unchecked.defaultof<Content>
     let mutable gameState = Unchecked.defaultof<State>
-    let mutable projection = Unchecked.defaultof<Matrix>
     let mutable device = Unchecked.defaultof<GraphicsDevice>
     let mutable hdrRenderTarget = Unchecked.defaultof<RenderTarget2D>
     let mutable input = Unchecked.defaultof<Input>
@@ -79,7 +79,6 @@ type LandGame() as _this =
         let environment = ContentLoader.loadEnvironment
 
         let terrain, vertices, indices, minMaxTerrainHeight = createTerrain
-        projection <- Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 5000.0f)
 
         let pp = device.PresentationParameters
         hdrRenderTarget <- new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)
@@ -123,6 +122,7 @@ type LandGame() as _this =
         gameContent <- {
             SpriteBatch = new SpriteBatch(device)
             Effects = effects
+            Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 5000.0f)
             Environment = environment
             Sky = Sky(effects.SkyFromAtmosphere, environment, device)
             Water = Water(effects.GroundFromAtmosphere, perlinTexture3D, environment, device)
@@ -174,14 +174,14 @@ type LandGame() as _this =
         let view = gameState.Camera.ViewMatrix
         let world = Matrix.Identity
 
-        let waterReflectionView = gameContent.Water.Prepare view world gameState.Camera _this.DrawApartFromSky (gameContent.Sky.DrawSkyDome world projection gameState.LightDirection gameState.Camera)
+        let waterReflectionView = gameContent.Water.Prepare view world gameState.Camera _this.DrawApartFromSky (gameContent.Sky.DrawSkyDome world gameContent.Projection gameState.LightDirection gameState.Camera)
 
         device.SetRenderTarget(hdrRenderTarget)
 
         do device.Clear(Color.Black)
         _this.DrawApartFromSky false view world Vector4.Zero // no clip plane
-        gameContent.Water.DrawWater time world view projection gameState.LightDirection gameState.Camera waterReflectionView
-        gameContent.Sky.DrawSkyDome world projection gameState.LightDirection gameState.Camera view
+        gameContent.Water.DrawWater time world view gameContent.Projection gameState.LightDirection gameState.Camera waterReflectionView
+        gameContent.Sky.DrawSkyDome world gameContent.Projection gameState.LightDirection gameState.Camera view
         //_this.DrawDebug perlinTexture3D
 
         device.SetRenderTarget(null)
@@ -209,7 +209,7 @@ type LandGame() as _this =
         effect.CurrentTechnique <- effect.Techniques.["GroundFromAtmosphere"]
         effect.Parameters.["xWorld"].SetValue(worldMatrix)
         effect.Parameters.["xView"].SetValue(viewMatrix)
-        effect.Parameters.["xProjection"].SetValue(projection)
+        effect.Parameters.["xProjection"].SetValue(gameContent.Projection)
         effect.Parameters.["xCameraPosition"].SetValue(gameState.Camera.Position)
         effect.Parameters.["xLightDirection"].SetValue(gameState.LightDirection)
         effect.Parameters.["xGrassTexture"].SetValue(gameContent.Textures.Grass)
@@ -241,7 +241,7 @@ type LandGame() as _this =
         effect.CurrentTechnique <- effect.Techniques.["Coloured"]
         effect.Parameters.["xWorld"].SetValue(sphereWorld)
         effect.Parameters.["xView"].SetValue(viewMatrix)
-        effect.Parameters.["xProjection"].SetValue(projection)
+        effect.Parameters.["xProjection"].SetValue(gameContent.Projection)
         effect.Parameters.["xLightDirection"].SetValue(gameState.LightDirection)
         effect.Parameters.["xAmbient"].SetValue(0.5f)
         
