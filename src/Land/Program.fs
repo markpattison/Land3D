@@ -19,13 +19,11 @@ type LandGame() as _this =
     do graphics.PreferredBackBufferHeight <- 700
     do graphics.IsFullScreen <- false
     do graphics.ApplyChanges()
-    do base.Content.RootDirectory <- "Content"
 
     override _this.Initialize() =
         device <- base.GraphicsDevice
 
         base.Initialize()
-        ()
 
     override _this.LoadContent() =
 

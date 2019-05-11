@@ -69,34 +69,30 @@ let drawApartFromSky (device: GraphicsDevice) (gameState: State) (gameContent: C
     drawSphere viewMatrix device gameState gameContent
 
 let draw (gameTime: GameTime) (device: GraphicsDevice) (gameState: State) (gameContent: Content) =
-        let time = (single gameTime.TotalGameTime.TotalMilliseconds) / 100.0f
+    let time = (single gameTime.TotalGameTime.TotalMilliseconds) / 100.0f
 
-        let view = gameState.Camera.ViewMatrix
-        let world = Matrix.Identity
+    let view = gameState.Camera.ViewMatrix
+    let world = Matrix.Identity
 
-        let waterReflectionView = gameContent.Water.Prepare view world gameState.Camera (drawApartFromSky device gameState gameContent) (gameContent.Sky.DrawSkyDome world gameContent.Projection gameState.LightDirection gameState.Camera)
+    let waterReflectionView = gameContent.Water.Prepare view world gameState.Camera (drawApartFromSky device gameState gameContent) (gameContent.Sky.DrawSkyDome world gameContent.Projection gameState.LightDirection gameState.Camera)
 
-        device.SetRenderTarget(gameContent.HdrRenderTarget)
+    device.SetRenderTarget(gameContent.HdrRenderTarget)
 
-        do device.Clear(Color.Black)
-        drawApartFromSky device gameState gameContent false view world Vector4.Zero // no clip plane
-        gameContent.Water.DrawWater time world view gameContent.Projection gameState.LightDirection gameState.Camera waterReflectionView
-        gameContent.Sky.DrawSkyDome world gameContent.Projection gameState.LightDirection gameState.Camera view
-        //_this.DrawDebug perlinTexture3D
+    do device.Clear(Color.Black)
+    drawApartFromSky device gameState gameContent false view world Vector4.Zero // no clip plane
+    gameContent.Water.DrawWater time world view gameContent.Projection gameState.LightDirection gameState.Camera waterReflectionView
+    gameContent.Sky.DrawSkyDome world gameContent.Projection gameState.LightDirection gameState.Camera view
+    //_this.DrawDebug perlinTexture3D
 
-        device.SetRenderTarget(null)
+    device.SetRenderTarget(null)
 
-        let effect = gameContent.Effects.Hdr
-        effect.CurrentTechnique <- effect.Techniques.["Plain"]
+    let effect = gameContent.Effects.Hdr
+    effect.CurrentTechnique <- effect.Techniques.["Plain"]
 
-        gameContent.SpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, 
-            SamplerState.LinearClamp, DepthStencilState.Default, 
-            RasterizerState.CullNone, effect)
+    gameContent.SpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, 
+        SamplerState.LinearClamp, DepthStencilState.Default, 
+        RasterizerState.CullNone, effect)
  
-        gameContent.SpriteBatch.Draw(gameContent.HdrRenderTarget, new Rectangle(0, 0, device.PresentationParameters.BackBufferWidth, device.PresentationParameters.BackBufferHeight), Color.White);
+    gameContent.SpriteBatch.Draw(gameContent.HdrRenderTarget, new Rectangle(0, 0, device.PresentationParameters.BackBufferWidth, device.PresentationParameters.BackBufferHeight), Color.White);
  
-        gameContent.SpriteBatch.End();
-
-        //do base.Draw(gameTime)
-
-
+    gameContent.SpriteBatch.End();

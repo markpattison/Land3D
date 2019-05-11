@@ -50,10 +50,10 @@ let loadEnvironment =
 
 let createTerrain =
     let terrain = Terrain 256
-    do terrain.DeformCircularFaults 500 2.0f 20.0f 100.0f
-    do terrain.Normalize 0.5f 2.0f
-    do terrain.Stretch 4.0f
-    do terrain.Normalize -5.0f 25.0f
+    terrain.DeformCircularFaults 500 2.0f 20.0f 100.0f
+    terrain.Normalize 0.5f 2.0f
+    terrain.Stretch 4.0f
+    terrain.Normalize -5.0f 25.0f
     let vertices = GetVertices terrain
     let indices = GetIndices terrain.Size
     let minMaxTerrainHeight =
@@ -62,59 +62,61 @@ let createTerrain =
     (terrain, vertices, indices, minMaxTerrainHeight)
 
 let load (device: GraphicsDevice) (content: Content.ContentManager) =
-        let environment = loadEnvironment
+    content.RootDirectory <- "Content"
 
-        let terrain, vertices, indices, minMaxTerrainHeight = createTerrain
+    let environment = loadEnvironment
 
-        let pp = device.PresentationParameters
+    let terrain, vertices, indices, minMaxTerrainHeight = createTerrain
 
-        let debugVertices =
-            [|
-                VertexPositionTexture(Vector3(-0.9f, 0.5f, 0.0f), new Vector2(0.0f, 0.0f));
-                VertexPositionTexture(Vector3(-0.9f, 0.9f, 0.0f), new Vector2(0.0f, 1.0f));
-                VertexPositionTexture(Vector3(-0.5f, 0.5f, 0.0f), new Vector2(1.0f, 0.0f));
+    let pp = device.PresentationParameters
 
-                VertexPositionTexture(Vector3(-0.5f, 0.5f, 0.0f), new Vector2(1.0f, 0.0f));
-                VertexPositionTexture(Vector3(-0.9f, 0.9f, 0.0f), new Vector2(0.0f, 1.0f));
-                VertexPositionTexture(Vector3(-0.5f, 0.9f, 0.0f), new Vector2(1.0f, 1.0f));
-            |]
+    let debugVertices =
+        [|
+            VertexPositionTexture(Vector3(-0.9f, 0.5f, 0.0f), new Vector2(0.0f, 0.0f));
+            VertexPositionTexture(Vector3(-0.9f, 0.9f, 0.0f), new Vector2(0.0f, 1.0f));
+            VertexPositionTexture(Vector3(-0.5f, 0.5f, 0.0f), new Vector2(1.0f, 0.0f));
 
-        // perlin noise texture
+            VertexPositionTexture(Vector3(-0.5f, 0.5f, 0.0f), new Vector2(1.0f, 0.0f));
+            VertexPositionTexture(Vector3(-0.9f, 0.9f, 0.0f), new Vector2(0.0f, 1.0f));
+            VertexPositionTexture(Vector3(-0.5f, 0.9f, 0.0f), new Vector2(1.0f, 1.0f));
+        |]
 
-        let perlinTexture3D = new Texture3D(device, 16, 16, 16, false, SurfaceFormat.Color)
-        let random = new System.Random()
+    // perlin noise texture
 
-        let randomVectorColour x =
-            let v = Vector3(single (random.NextDouble() * 2.0 - 1.0),
-                            single (random.NextDouble() * 2.0 - 1.0),
-                            single (random.NextDouble() * 2.0 - 1.0))
-            v.Normalize()
-            Color(v)
+    let perlinTexture3D = new Texture3D(device, 16, 16, 16, false, SurfaceFormat.Color)
+    let random = new System.Random()
 
-        let randomVectors = Array.init (16 * 16 * 16) randomVectorColour
-        perlinTexture3D.SetData<Color>(randomVectors)
+    let randomVectorColour x =
+        let v = Vector3(single (random.NextDouble() * 2.0 - 1.0),
+                        single (random.NextDouble() * 2.0 - 1.0),
+                        single (random.NextDouble() * 2.0 - 1.0))
+        v.Normalize()
+        Color(v)
 
-        let sphere = Sphere.create 2
+    let randomVectors = Array.init (16 * 16 * 16) randomVectorColour
+    perlinTexture3D.SetData<Color>(randomVectors)
 
-        let (sphereVerts, sphereInds) = Sphere.getVerticesAndIndices Smooth OutwardFacing Even sphere
+    let sphere = Sphere.create 2
 
-        let effects = loadEffects content
+    let (sphereVerts, sphereInds) = Sphere.getVerticesAndIndices Smooth OutwardFacing Even sphere
 
-        {
-            SpriteBatch = new SpriteBatch(device)
-            Effects = effects
-            Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 5000.0f)
-            HdrRenderTarget = new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)
-            Environment = environment
-            Sky = Sky(effects.SkyFromAtmosphere, environment, device)
-            Water = Water(effects.GroundFromAtmosphere, perlinTexture3D, environment, device)
-            Vertices = vertices
-            DebugVertices = debugVertices
-            Indices = indices
-            Terrain = terrain
-            MinMaxTerrainHeight = minMaxTerrainHeight
-            Textures = loadTextures content
-            PerlinTexture3D = perlinTexture3D
-            SphereVertices = sphereVerts
-            SphereIndices = sphereInds
-        }
+    let effects = loadEffects content
+
+    {
+        SpriteBatch = new SpriteBatch(device)
+        Effects = effects
+        Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 5000.0f)
+        HdrRenderTarget = new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)
+        Environment = environment
+        Sky = Sky(effects.SkyFromAtmosphere, environment, device)
+        Water = Water(effects.GroundFromAtmosphere, perlinTexture3D, environment, device)
+        Vertices = vertices
+        DebugVertices = debugVertices
+        Indices = indices
+        Terrain = terrain
+        MinMaxTerrainHeight = minMaxTerrainHeight
+        Textures = loadTextures content
+        PerlinTexture3D = perlinTexture3D
+        SphereVertices = sphereVerts
+        SphereIndices = sphereInds
+    }
