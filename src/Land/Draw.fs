@@ -25,7 +25,7 @@ let drawTerrain (x: bool) (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane:
     effect.Parameters.["xPerlinSize3D"].SetValue(15.0f)
     effect.Parameters.["xRandomTexture3D"].SetValue(gameContent.PerlinTexture3D)
 
-    gameContent.Environment.Atmosphere.ApplyToEffect effect
+    Atmosphere.applyToEffect gameContent.Atmosphere effect
     gameContent.Environment.Water.ApplyToGroundEffect effect
 
     device.BlendState <- BlendState.Opaque

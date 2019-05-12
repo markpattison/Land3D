@@ -7,18 +7,17 @@ open Microsoft.Xna.Framework.Graphics
 open VertexPositionNormal
 open Sphere
 open EnvironmentParameters
-open FreeCamera
 
 type Sky =
     {
         Vertices: VertexPositionNormal[]
         Indices: int[]
         Effect: Effect
-        Environment: EnvironmentParameters
+        Atmosphere: Atmosphere.Atmosphere
         Device: GraphicsDevice
     }
 
-let prepareSky (effects: Effects) (environment: EnvironmentParameters) (device: GraphicsDevice) =
+let prepareSky effects atmosphere device =
 
     let effect = effects.SkyFromAtmosphere
     let skySphere = Sphere.create 4
@@ -28,7 +27,7 @@ let prepareSky (effects: Effects) (environment: EnvironmentParameters) (device: 
         Vertices = skySphereVertices
         Indices = skySphereIndices
         Effect = effect
-        Environment = environment
+        Atmosphere = atmosphere
         Device = device
     }
 
@@ -64,7 +63,7 @@ let drawSkyDome sky (world: Matrix) (projection: Matrix) (lightDirection: Vector
     effect.Parameters.["xCameraPosition"].SetValue(cameraPosition)
     effect.Parameters.["xLightDirection"].SetValue(lightDirection)
 
-    sky.Environment.Atmosphere.ApplyToEffect effect
+    Atmosphere.applyToEffect sky.Atmosphere effect
 
     if wireframe then
         let rs' = new RasterizerState()

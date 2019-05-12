@@ -9,6 +9,7 @@ open Terrain
 open EnvironmentParameters
 open Water
 open Sky
+open Atmosphere
 
 type Textures =
     {
@@ -25,6 +26,7 @@ type Content =
         Projection: Matrix
         HdrRenderTarget: RenderTarget2D
         Environment: EnvironmentParameters
+        Atmosphere: Atmosphere
         Sky: Sky
         Water: Water
         Vertices: VertexPositionNormalTexture[]

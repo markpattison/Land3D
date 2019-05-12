@@ -7,7 +7,7 @@ open EnvironmentParameters
 open Terrain
 open Sphere
 open Water
-open Sky
+open Atmosphere
 
 let loadEffects (content: Content.ContentManager) =
     {
@@ -27,17 +27,6 @@ let loadTextures (content: Content.ContentManager) =
 
 let loadEnvironment =
     {
-        Atmosphere =
-            {
-                InnerRadius = 100000.0f;
-                OuterRadius = 102500.0f;
-                ScaleDepth = 0.25f;
-                KR = 0.0025f;
-                KM = 0.0010f;
-                ESun = 20.0f;
-                G = -0.95f;
-                Wavelengths = Vector3(0.650f, 0.570f, 0.440f);
-            };
         Water =
             {
                 WindDirection = Vector2(0.0f, 1.0f);
@@ -102,13 +91,26 @@ let load (device: GraphicsDevice) (content: Content.ContentManager) =
 
     let effects = loadEffects content
 
+    let atmosphere =
+        {
+            InnerRadius = 100000.0f
+            OuterRadius = 102500.0f
+            ScaleDepth = 0.25f
+            KR = 0.0025f
+            KM = 0.0010f
+            ESun = 20.0f
+            G = -0.95f
+            Wavelengths = Vector3(0.650f, 0.570f, 0.440f)
+        } |> Atmosphere.prepare
+
     {
         SpriteBatch = new SpriteBatch(device)
         Effects = effects
         Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 5000.0f)
         HdrRenderTarget = new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)
         Environment = environment
-        Sky = Sky.prepareSky effects environment device
+        Atmosphere = atmosphere
+        Sky = Sky.prepareSky effects atmosphere device
         Water = Water(effects.GroundFromAtmosphere, perlinTexture3D, environment, device)
         Vertices = vertices
         DebugVertices = debugVertices
