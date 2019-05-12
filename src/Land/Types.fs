@@ -10,14 +10,6 @@ open EnvironmentParameters
 open Water
 open Sky
 
-type Effects =
-    {
-        Effect: Effect;
-        Hdr: Effect;
-        SkyFromAtmosphere: Effect;
-        GroundFromAtmosphere: Effect
-    }
-
 type Textures =
     {
         Grass: Texture2D;
