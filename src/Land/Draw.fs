@@ -74,14 +74,14 @@ let draw (gameTime: GameTime) (device: GraphicsDevice) (gameState: State) (gameC
     let view = gameState.Camera.ViewMatrix
     let world = Matrix.Identity
 
-    let waterReflectionView = gameContent.Water.Prepare view world gameState.Camera (drawApartFromSky device gameState gameContent) (gameContent.Sky.DrawSkyDome world gameContent.Projection gameState.LightDirection gameState.Camera)
+    let waterReflectionView = gameContent.Water.Prepare view world gameState.Camera (drawApartFromSky device gameState gameContent) (Sky.drawSkyDome gameContent.Sky world gameContent.Projection gameState.LightDirection gameState.Camera)
 
     device.SetRenderTarget(gameContent.HdrRenderTarget)
 
     do device.Clear(Color.Black)
     drawApartFromSky device gameState gameContent false view world Vector4.Zero // no clip plane
     gameContent.Water.DrawWater time world view gameContent.Projection gameState.LightDirection gameState.Camera waterReflectionView
-    gameContent.Sky.DrawSkyDome world gameContent.Projection gameState.LightDirection gameState.Camera view
+    Sky.drawSkyDome gameContent.Sky world gameContent.Projection gameState.LightDirection gameState.Camera view
     //_this.DrawDebug perlinTexture3D
 
     device.SetRenderTarget(null)
