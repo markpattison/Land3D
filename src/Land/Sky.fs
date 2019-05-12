@@ -32,7 +32,7 @@ let prepareSky (effects: Effects) (environment: EnvironmentParameters) (device: 
         Device = device
     }
 
-let drawSkyDome sky (world: Matrix) (projection: Matrix) (lightDirection: Vector3) (camera: FreeCamera) (viewMatrix: Matrix) =
+let drawSkyDome sky (world: Matrix) (projection: Matrix) (lightDirection: Vector3) (cameraPosition: Vector3) (view: Matrix) =
     
     let wireframe = false
 
@@ -54,13 +54,14 @@ let drawSkyDome sky (world: Matrix) (projection: Matrix) (lightDirection: Vector
             let angle = single(Math.Atan2(float crossLength, float dot))
             cross.Normalize()
             Matrix.CreateFromAxisAngle(cross, angle)
-    let wMatrix2 = world * Matrix.CreateScale(20000.0f) * rot * Matrix.CreateTranslation(camera.Position)
+    
+    let skyWorld = world * Matrix.CreateScale(20000.0f) * rot * Matrix.CreateTranslation(cameraPosition)
 
     effect.CurrentTechnique <- effect.Techniques.["SkyFromAtmosphere"]
-    effect.Parameters.["xWorld"].SetValue(wMatrix2)
-    effect.Parameters.["xView"].SetValue(viewMatrix)
+    effect.Parameters.["xWorld"].SetValue(skyWorld)
+    effect.Parameters.["xView"].SetValue(view)
     effect.Parameters.["xProjection"].SetValue(projection)
-    effect.Parameters.["xCameraPosition"].SetValue(camera.Position)
+    effect.Parameters.["xCameraPosition"].SetValue(cameraPosition)
     effect.Parameters.["xLightDirection"].SetValue(lightDirection)
 
     sky.Environment.Atmosphere.ApplyToEffect effect
