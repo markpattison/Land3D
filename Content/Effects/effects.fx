@@ -190,50 +190,6 @@ technique Debug
 	}
 }
 
-//------- Technique: Coloured --------
-
-struct ColouredVertexToPixel
-{
-	float4 Position      : SV_POSITION;
-	float LightingFactor : TEXCOORD0;
-};
-
-ColouredVertexToPixel ColouredVS(float4 inPos : SV_POSITION, float3 inNormal : NORMAL)
-{
-	ColouredVertexToPixel Output = (ColouredVertexToPixel)0;
-
-	float4x4 preViewProjection = mul(xView, xProjection);
-	float4x4 preWorldViewProjection = mul(xWorld, preViewProjection);
-
-	float4 worldPosition = mul(inPos, xWorld);
-	Output.Position = mul(inPos, preWorldViewProjection);
-
-	float3 normal = normalize(mul(float4(normalize(inNormal), 0.0), xWorld)).xyz;
-
-	Output.LightingFactor = dot(normal, -xLightDirection);
-
-	return Output;
-}
-
-PixelToFrame ColouredPS(ColouredVertexToPixel PSIn)
-{
-	PixelToFrame Output = (PixelToFrame)0;
-
-	Output.Color = float4(1.0, 0.0, 0.0, 1.0);
-	Output.Color.rgb *= PSIn.LightingFactor + xAmbient;
-
-	return Output;
-}
-
-technique Coloured
-{
-	pass Pass0
-	{
-		VertexShader = compile vs_4_0 ColouredVS();
-		PixelShader = compile ps_4_0 ColouredPS();
-	}
-}
-
 //------- Technique: Textured --------
 
 VertexToPixel TexturedVS(float4 inPos : SV_POSITION, float3 inNormal : NORMAL, float2 inTexCoords : TEXCOORD0)
