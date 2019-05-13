@@ -4,7 +4,6 @@ open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
 open VertexPositionNormal
-open FreeCamera
 open Terrain
 open Water
 open Sky
@@ -37,11 +36,3 @@ type Content =
         SphereVertices: VertexPositionNormal[]
         SphereIndices: int[]
     }
-
-type State =
-    {
-        LightDirection: Vector3
-        Camera: FreeCamera
-        Exiting: bool
-    }
-

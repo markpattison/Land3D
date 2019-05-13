@@ -5,7 +5,7 @@ open Microsoft.Xna.Framework.Graphics
 
 open VertexPositionNormal
 
-let drawTerrain (x: bool) (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane: Vector4) (device: GraphicsDevice) (gameState: State) (gameContent: Content) =
+let drawTerrain (x: bool) (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane: Vector4) (device: GraphicsDevice) (gameState: GameState) (gameContent: Content) =
     let effect = gameContent.Effects.GroundFromAtmosphere
 
     effect.CurrentTechnique <- effect.Techniques.["GroundFromAtmosphere"]
@@ -36,7 +36,7 @@ let drawTerrain (x: bool) (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane:
             device.DrawUserIndexedPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, gameContent.Vertices, 0, gameContent.Vertices.Length, gameContent.Indices, 0, gameContent.Indices.Length / 3)
         )
 
-let drawSphere (viewMatrix: Matrix) (device: GraphicsDevice) (gameState: State) (gameContent: Content) =
+let drawSphere (viewMatrix: Matrix) (device: GraphicsDevice) (gameState: GameState) (gameContent: Content) =
     let effect = gameContent.Effects.GroundFromAtmosphere
 
     let sphereWorld = Matrix.Multiply(Matrix.CreateTranslation(0.0f, 1.5f, 0.0f), Matrix.CreateScale(10.0f))
@@ -64,11 +64,11 @@ let drawDebug (texture: Texture2D) (device: GraphicsDevice) (gameContent: Conten
             device.DrawUserPrimitives<VertexPositionTexture>(PrimitiveType.TriangleList, gameContent.DebugVertices, 0, gameContent.DebugVertices.Length / 3)
         )
 
-let drawApartFromSky (device: GraphicsDevice) (gameState: State) (gameContent: Content) x (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane: Vector4)  =
+let drawApartFromSky (device: GraphicsDevice) (gameState: GameState) (gameContent: Content) x (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane: Vector4)  =
     drawTerrain x viewMatrix worldMatrix clipPlane device gameState gameContent
     drawSphere viewMatrix device gameState gameContent
 
-let draw (gameTime: GameTime) (device: GraphicsDevice) (gameState: State) (gameContent: Content) =
+let draw (gameTime: GameTime) (device: GraphicsDevice) (gameState: GameState) (gameContent: Content) =
     let time = (single gameTime.TotalGameTime.TotalMilliseconds) / 100.0f
 
     let view = gameState.Camera.ViewMatrix
@@ -82,7 +82,8 @@ let draw (gameTime: GameTime) (device: GraphicsDevice) (gameState: State) (gameC
     drawApartFromSky device gameState gameContent false view world Vector4.Zero // no clip plane
     Water.drawWater gameContent.Water time world view gameContent.Projection gameState.LightDirection gameState.Camera waterReflectionView
     Sky.drawSkyDome gameContent.Sky world gameContent.Projection gameState.LightDirection gameState.Camera.Position view
-    drawDebug gameContent.Water.RefractionRenderTarget device gameContent
+    
+    //drawDebug gameContent.Water.RefractionRenderTarget device gameContent
 
     device.SetRenderTarget(null)
 

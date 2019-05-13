@@ -10,7 +10,7 @@ type LandGame() as _this =
     inherit Game()
     let graphics = new GraphicsDeviceManager(_this)
     let mutable gameContent = Unchecked.defaultof<Content>
-    let mutable gameState = Unchecked.defaultof<State>
+    let mutable gameState = Unchecked.defaultof<GameState>
     let mutable device = Unchecked.defaultof<GraphicsDevice>
     let mutable input = Unchecked.defaultof<Input>
     let mutable originalMouseState = Unchecked.defaultof<MouseState>
