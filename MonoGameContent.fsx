@@ -64,13 +64,13 @@ let MonoGameContentDefaults =
         TimeOut = TimeSpan.FromMilliseconds((float)Int32.MaxValue)
     }
 
-let buildMonoGameContentArgs parameters contentFiles =
-    new StringBuilder()
-    |> Fake.Core.StringBuilder.appendQuotedIfNotNull parameters.OutputDir @"/outputDir:"
-    |> Fake.Core.StringBuilder.appendQuotedIfNotNull parameters.IntermediateDir @"/intermediateDir:"
-    |> Fake.Core.StringBuilder.appendWithoutQuotesIfNotNull parameters.Platform.ParamString @"/platform:"
-    |> Fake.Core.StringBuilder.appendWithoutQuotes (contentFiles |> Seq.map (fun cf -> @" /build:" + "\"" + cf + "\"") |> String.concat "")
-    |> Fake.Core.StringBuilder.toText
+let getArgs parameters contentFiles =
+    [
+        if Fake.Core.String.isNotNullOrEmpty parameters.OutputDir then yield sprintf "/outputDir:%s" parameters.OutputDir
+        if Fake.Core.String.isNotNullOrEmpty parameters.IntermediateDir then yield sprintf "/intermediateDir:%s" parameters.IntermediateDir
+        yield sprintf "/platform:%s" parameters.Platform.ParamString
+        yield! contentFiles |> Seq.map (fun cf -> sprintf "/build:%s" cf)
+    ] |> Arguments.OfArgs
 
 let getWorkingDir parameters = 
     Seq.find (Fake.Core.String.isNotNullOrEmpty) [ parameters.WorkingDir;
@@ -81,9 +81,10 @@ let getWorkingDir parameters =
 let buildMonoGameContent (setParams : MonoGameContentParams -> MonoGameContentParams) (content : string seq) =
     let parameters = MonoGameContentDefaults |> setParams
     let tool = parameters.ToolPath
-    let args = buildMonoGameContentArgs parameters content
+    let args = getArgs parameters content
     let result =
-        CreateProcess.fromRawCommand tool [ args ]
+        Command.RawCommand(tool, args)
+        |>CreateProcess.fromCommand
         |> CreateProcess.withWorkingDirectory (getWorkingDir parameters)
         |> Proc.run
     if result.ExitCode <> 0 then failwithf "MonoGame content building failed. Process finished with exit code %i." result.ExitCode
