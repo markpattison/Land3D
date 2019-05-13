@@ -7,14 +7,27 @@ open Microsoft.Xna.Framework.Graphics
 open Terrain
 open Sphere
 open Atmosphere
+open Water
 
-let waterParameters : Water.WaterParameters =
+let waterParameters =
     {
         WindDirection = Vector2(0.0f, 1.0f)
         WindForce = 0.0015f
         WaveLength = 0.1f
         WaveHeight = 0.8f
         Opacity = 4.0f
+    }
+
+let atmosphereParameters =
+    {
+        InnerRadius = 100000.0f
+        OuterRadius = 102500.0f
+        ScaleDepth = 0.25f
+        KR = 0.0025f
+        KM = 0.0010f
+        ESun = 20.0f
+        G = -0.95f
+        Wavelengths = Vector3(0.650f, 0.570f, 0.440f)
     }
 
 let createTerrain =
@@ -47,21 +60,8 @@ let load (device: GraphicsDevice) (contentManager: ContentManager) =
             VertexPositionTexture(Vector3(-0.9f, 0.9f, 0.0f), new Vector2(0.0f, 1.0f));
             VertexPositionTexture(Vector3(-0.5f, 0.9f, 0.0f), new Vector2(1.0f, 1.0f));
         |]
-
-    // perlin noise texture
-
-    let perlinTexture3D = new Texture3D(device, 16, 16, 16, false, SurfaceFormat.Color)
-    let random = new System.Random()
-
-    let randomVectorColour x =
-        let v = Vector3(single (random.NextDouble() * 2.0 - 1.0),
-                        single (random.NextDouble() * 2.0 - 1.0),
-                        single (random.NextDouble() * 2.0 - 1.0))
-        v.Normalize()
-        Color(v)
-
-    let randomVectors = Array.init (16 * 16 * 16) randomVectorColour
-    perlinTexture3D.SetData<Color>(randomVectors)
+    
+    let perlinTexture3D = PerlinNoiseTexture3D.create device 16
 
     let sphere = Sphere.create 2
 
@@ -69,17 +69,7 @@ let load (device: GraphicsDevice) (contentManager: ContentManager) =
 
     let effects = Effects.load contentManager
 
-    let atmosphere =
-        {
-            InnerRadius = 100000.0f
-            OuterRadius = 102500.0f
-            ScaleDepth = 0.25f
-            KR = 0.0025f
-            KM = 0.0010f
-            ESun = 20.0f
-            G = -0.95f
-            Wavelengths = Vector3(0.650f, 0.570f, 0.440f)
-        } |> Atmosphere.prepare
+    let atmosphere = atmosphereParameters |> Atmosphere.prepare
 
     {
         SpriteBatch = new SpriteBatch(device)
@@ -87,7 +77,7 @@ let load (device: GraphicsDevice) (contentManager: ContentManager) =
         Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 5000.0f)
         HdrRenderTarget = new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)
         Atmosphere = atmosphere
-        Sky = Sky.prepare effects atmosphere device
+        Sky = Sky.prepare effects.SkyFromAtmosphere atmosphere device
         Water = Water.prepare effects.GroundFromAtmosphere perlinTexture3D waterParameters device 3000.0f
         Vertices = vertices
         DebugVertices = debugVertices

@@ -17,9 +17,8 @@ type Sky =
         Device: GraphicsDevice
     }
 
-let prepare effects atmosphere device =
+let prepare effect atmosphere device =
 
-    let effect = effects.SkyFromAtmosphere
     let skySphere = Sphere.create 4
     let (skySphereVertices, skySphereIndices) = Sphere.getVerticesAndIndices Smooth InwardFacing Concentrated skySphere
 

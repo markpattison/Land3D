@@ -35,6 +35,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Compile Include="VertexPositionNormal.fs" />
+    <Compile Include="PerlinNoiseTexture3D.fs" />
     <Compile Include="Terrain.fs" />
     <Compile Include="Input.fs" />
     <Compile Include="FreeCamera.fs" />
