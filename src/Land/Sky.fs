@@ -5,6 +5,7 @@ open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
 open VertexPositionNormal
+open Effects
 open Sphere
 
 type Sky =

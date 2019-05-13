@@ -8,14 +8,6 @@ open Terrain
 open Sphere
 open Atmosphere
 
-let loadEffects (contentManager: ContentManager) =
-    {
-        Effect = contentManager.Load<Effect>("Effects/effects")
-        Hdr = contentManager.Load<Effect>("Effects/hdr")
-        SkyFromAtmosphere = contentManager.Load<Effect>("Effects/skyFromAtmosphere")
-        GroundFromAtmosphere = contentManager.Load<Effect>("Effects/groundFromAtmosphere")
-    }
-
 let loadTextures (contentManager: ContentManager) =
     {
         Grass = contentManager.Load<Texture2D>("Textures/grass")
@@ -83,7 +75,7 @@ let load (device: GraphicsDevice) (contentManager: ContentManager) =
 
     let (sphereVerts, sphereInds) = Sphere.getVerticesAndIndices Smooth OutwardFacing Even sphere
 
-    let effects = loadEffects contentManager
+    let effects = Effects.load contentManager
 
     let atmosphere =
         {

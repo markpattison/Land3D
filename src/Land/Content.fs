@@ -4,6 +4,7 @@ open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
 open VertexPositionNormal
+open Effects
 open Terrain
 open Water
 open Sky

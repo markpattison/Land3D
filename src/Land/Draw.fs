@@ -4,6 +4,7 @@ open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
 open VertexPositionNormal
+open Effects
 
 let drawTerrain (x: bool) (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane: Vector4) (device: GraphicsDevice) state content =
     let effect = content.Effects.GroundFromAtmosphere
