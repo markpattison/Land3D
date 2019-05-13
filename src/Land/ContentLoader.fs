@@ -8,14 +8,6 @@ open Terrain
 open Sphere
 open Atmosphere
 
-let loadTextures (contentManager: ContentManager) =
-    {
-        Grass = contentManager.Load<Texture2D>("Textures/grass")
-        Rock = contentManager.Load<Texture2D>("Textures/rock")
-        Sand = contentManager.Load<Texture2D>("Textures/sand")
-        Snow = contentManager.Load<Texture2D>("Textures/snow")
-    }
-
 let waterParameters : Water.WaterParameters =
     {
         WindDirection = Vector2(0.0f, 1.0f)
@@ -102,7 +94,7 @@ let load (device: GraphicsDevice) (contentManager: ContentManager) =
         Indices = indices
         Terrain = terrain
         MinMaxTerrainHeight = minMaxTerrainHeight
-        Textures = loadTextures contentManager
+        Textures = Textures.load contentManager
         PerlinTexture3D = perlinTexture3D
         SphereVertices = sphereVerts
         SphereIndices = sphereInds

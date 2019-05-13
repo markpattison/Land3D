@@ -44,6 +44,7 @@
     <Compile Include="Sky.fs" />
     <Compile Include="Water.fs" />
     <Compile Include="GameState.fs" />
+    <Compile Include="Textures.fs" />
     <Compile Include="Content.fs" />
     <Compile Include="ContentLoader.fs" />
     <Compile Include="Update.fs" />

@@ -5,18 +5,11 @@ open Microsoft.Xna.Framework.Graphics
 
 open VertexPositionNormal
 open Effects
+open Textures
 open Terrain
 open Water
 open Sky
 open Atmosphere
-
-type Textures =
-    {
-        Grass: Texture2D;
-        Rock: Texture2D;
-        Sand: Texture2D;
-        Snow: Texture2D;
-    }
 
 type Content =
     {
