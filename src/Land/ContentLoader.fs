@@ -3,10 +3,8 @@
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
-open EnvironmentParameters
 open Terrain
 open Sphere
-open Water
 open Atmosphere
 
 let loadEffects (content: Content.ContentManager) =
@@ -25,16 +23,13 @@ let loadTextures (content: Content.ContentManager) =
         Snow = content.Load<Texture2D>("Textures/snow")
     }
 
-let loadEnvironment =
+let waterParameters : Water.WaterParameters =
     {
-        Water =
-            {
-                WindDirection = Vector2(0.0f, 1.0f);
-                WindForce = 0.0015f;
-                WaveLength = 0.1f;
-                WaveHeight = 0.8f;
-                Opacity = 4.0f;
-            };
+        WindDirection = Vector2(0.0f, 1.0f)
+        WindForce = 0.0015f
+        WaveLength = 0.1f
+        WaveHeight = 0.8f
+        Opacity = 4.0f
     }
 
 let createTerrain =
@@ -52,8 +47,6 @@ let createTerrain =
 
 let load (device: GraphicsDevice) (content: Content.ContentManager) =
     content.RootDirectory <- "Content"
-
-    let environment = loadEnvironment
 
     let terrain, vertices, indices, minMaxTerrainHeight = createTerrain
 
@@ -108,10 +101,9 @@ let load (device: GraphicsDevice) (content: Content.ContentManager) =
         Effects = effects
         Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 5000.0f)
         HdrRenderTarget = new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)
-        Environment = environment
         Atmosphere = atmosphere
         Sky = Sky.prepareSky effects atmosphere device
-        Water = Water(effects.GroundFromAtmosphere, perlinTexture3D, environment, device)
+        Water = Water.prepare effects.GroundFromAtmosphere perlinTexture3D waterParameters device 3000.0f
         Vertices = vertices
         DebugVertices = debugVertices
         Indices = indices

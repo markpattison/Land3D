@@ -6,7 +6,6 @@ open Microsoft.Xna.Framework.Graphics
 open VertexPositionNormal
 open FreeCamera
 open Terrain
-open EnvironmentParameters
 open Water
 open Sky
 open Atmosphere
@@ -25,7 +24,6 @@ type Content =
         Effects: Effects
         Projection: Matrix
         HdrRenderTarget: RenderTarget2D
-        Environment: EnvironmentParameters
         Atmosphere: Atmosphere
         Sky: Sky
         Water: Water

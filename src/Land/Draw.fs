@@ -26,7 +26,7 @@ let drawTerrain (x: bool) (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane:
     effect.Parameters.["xRandomTexture3D"].SetValue(gameContent.PerlinTexture3D)
 
     Atmosphere.applyToEffect gameContent.Atmosphere effect
-    gameContent.Environment.Water.ApplyToGroundEffect effect
+    Water.applyToGroundEffect gameContent.Water.WaterParameters effect
 
     device.BlendState <- BlendState.Opaque
 
@@ -53,7 +53,7 @@ let drawSphere (viewMatrix: Matrix) (device: GraphicsDevice) (gameState: State) 
             device.DrawUserIndexedPrimitives<VertexPositionNormal>(PrimitiveType.TriangleList, gameContent.SphereVertices, 0, gameContent.SphereVertices.Length, gameContent.SphereIndices, 0, gameContent.SphereIndices.Length / 3)
         )
 
-let drawDebug (texture: Texture2D) (device: GraphicsDevice) (gameState: State) (gameContent: Content) =
+let drawDebug (texture: Texture2D) (device: GraphicsDevice) (gameContent: Content) =
     let effect = gameContent.Effects.Effect
     effect.CurrentTechnique <- effect.Techniques.["Debug"]
     effect.Parameters.["xDebugTexture"].SetValue(texture)
@@ -74,15 +74,15 @@ let draw (gameTime: GameTime) (device: GraphicsDevice) (gameState: State) (gameC
     let view = gameState.Camera.ViewMatrix
     let world = Matrix.Identity
 
-    let waterReflectionView = gameContent.Water.Prepare view world gameState.Camera (drawApartFromSky device gameState gameContent) (Sky.drawSkyDome gameContent.Sky world gameContent.Projection gameState.LightDirection gameState.Camera.Position)
+    let waterReflectionView = Water.prepareFrameAndReturnReflectionView gameContent.Water view world gameState.Camera (drawApartFromSky device gameState gameContent) (Sky.drawSkyDome gameContent.Sky world gameContent.Projection gameState.LightDirection gameState.Camera.Position)
 
     device.SetRenderTarget(gameContent.HdrRenderTarget)
 
     do device.Clear(Color.Black)
     drawApartFromSky device gameState gameContent false view world Vector4.Zero // no clip plane
-    gameContent.Water.DrawWater time world view gameContent.Projection gameState.LightDirection gameState.Camera waterReflectionView
+    Water.drawWater gameContent.Water time world view gameContent.Projection gameState.LightDirection gameState.Camera waterReflectionView
     Sky.drawSkyDome gameContent.Sky world gameContent.Projection gameState.LightDirection gameState.Camera.Position view
-    //_this.DrawDebug perlinTexture3D
+    drawDebug gameContent.Water.RefractionRenderTarget device gameContent
 
     device.SetRenderTarget(null)
 

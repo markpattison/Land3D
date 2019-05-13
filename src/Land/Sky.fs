@@ -6,7 +6,6 @@ open Microsoft.Xna.Framework.Graphics
 
 open VertexPositionNormal
 open Sphere
-open EnvironmentParameters
 
 type Sky =
     {
