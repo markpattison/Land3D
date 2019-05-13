@@ -34,7 +34,6 @@
     <Content Include="App.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Compile Include="EffectReader.fs" />
     <Compile Include="VertexPositionNormal.fs" />
     <Compile Include="Terrain.fs" />
     <Compile Include="Input.fs" />
