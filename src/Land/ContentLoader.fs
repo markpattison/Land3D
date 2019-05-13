@@ -1,26 +1,27 @@
 ﻿module Land.ContentLoader
 
 open Microsoft.Xna.Framework
+open Microsoft.Xna.Framework.Content
 open Microsoft.Xna.Framework.Graphics
 
 open Terrain
 open Sphere
 open Atmosphere
 
-let loadEffects (content: Content.ContentManager) =
+let loadEffects (contentManager: ContentManager) =
     {
-        Effect = content.Load<Effect>("Effects/effects")
-        Hdr = content.Load<Effect>("Effects/hdr")
-        SkyFromAtmosphere = content.Load<Effect>("Effects/skyFromAtmosphere")
-        GroundFromAtmosphere = content.Load<Effect>("Effects/groundFromAtmosphere")
+        Effect = contentManager.Load<Effect>("Effects/effects")
+        Hdr = contentManager.Load<Effect>("Effects/hdr")
+        SkyFromAtmosphere = contentManager.Load<Effect>("Effects/skyFromAtmosphere")
+        GroundFromAtmosphere = contentManager.Load<Effect>("Effects/groundFromAtmosphere")
     }
 
-let loadTextures (content: Content.ContentManager) =
+let loadTextures (contentManager: ContentManager) =
     {
-        Grass = content.Load<Texture2D>("Textures/grass")
-        Rock = content.Load<Texture2D>("Textures/rock")
-        Sand = content.Load<Texture2D>("Textures/sand")
-        Snow = content.Load<Texture2D>("Textures/snow")
+        Grass = contentManager.Load<Texture2D>("Textures/grass")
+        Rock = contentManager.Load<Texture2D>("Textures/rock")
+        Sand = contentManager.Load<Texture2D>("Textures/sand")
+        Snow = contentManager.Load<Texture2D>("Textures/snow")
     }
 
 let waterParameters : Water.WaterParameters =
@@ -45,8 +46,8 @@ let createTerrain =
         new Vector2(min, max)
     (terrain, vertices, indices, minMaxTerrainHeight)
 
-let load (device: GraphicsDevice) (content: Content.ContentManager) =
-    content.RootDirectory <- "Content"
+let load (device: GraphicsDevice) (contentManager: ContentManager) =
+    contentManager.RootDirectory <- "Content"
 
     let terrain, vertices, indices, minMaxTerrainHeight = createTerrain
 
@@ -82,7 +83,7 @@ let load (device: GraphicsDevice) (content: Content.ContentManager) =
 
     let (sphereVerts, sphereInds) = Sphere.getVerticesAndIndices Smooth OutwardFacing Even sphere
 
-    let effects = loadEffects content
+    let effects = loadEffects contentManager
 
     let atmosphere =
         {
@@ -109,7 +110,7 @@ let load (device: GraphicsDevice) (content: Content.ContentManager) =
         Indices = indices
         Terrain = terrain
         MinMaxTerrainHeight = minMaxTerrainHeight
-        Textures = loadTextures content
+        Textures = loadTextures contentManager
         PerlinTexture3D = perlinTexture3D
         SphereVertices = sphereVerts
         SphereIndices = sphereInds

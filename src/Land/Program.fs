@@ -9,8 +9,8 @@ open Input
 type LandGame() as _this =
     inherit Game()
     let graphics = new GraphicsDeviceManager(_this)
-    let mutable gameContent = Unchecked.defaultof<Content>
-    let mutable gameState = Unchecked.defaultof<GameState>
+    let mutable content = Unchecked.defaultof<Content>
+    let mutable state = Unchecked.defaultof<GameState>
     let mutable device = Unchecked.defaultof<GraphicsDevice>
     let mutable input = Unchecked.defaultof<Input>
     let mutable originalMouseState = Unchecked.defaultof<MouseState>
@@ -31,25 +31,25 @@ type LandGame() as _this =
         originalMouseState <- Mouse.GetState()
         input <- Input(Keyboard.GetState(), Keyboard.GetState(), Mouse.GetState(), Mouse.GetState(), _this.Window, originalMouseState, 0, 0)
 
-        gameContent <- ContentLoader.load device _this.Content
+        content <- ContentLoader.load device _this.Content
 
-        gameState <- {
+        state <- {
             LightDirection = Vector3.Normalize(Vector3(0.0f, -0.5f, -1.0f))
-            Camera = FreeCamera(Vector3(0.0f, 10.0f, -(single gameContent.Terrain.Size) / 2.0f), 0.0f, 0.0f)
+            Camera = FreeCamera(Vector3(0.0f, 10.0f, -(single content.Terrain.Size) / 2.0f), 0.0f, 0.0f)
             Exiting = false
         }
 
     override _this.Update(gameTime) =
         input <- input.Updated(Keyboard.GetState(), Mouse.GetState(), _this.Window)
 
-        gameState <- Update.update gameTime input gameState
+        state <- Update.update gameTime input state
 
-        if gameState.Exiting then _this.Exit()
+        if state.Exiting then _this.Exit()
 
         do base.Update(gameTime)
 
     override _this.Draw(gameTime) =
-        Draw.draw gameTime device gameState gameContent
+        Draw.draw gameTime device state content
 
         do base.Draw(gameTime)
 
