@@ -38,7 +38,7 @@ let drawTerrain (x: bool) (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane:
             device.DrawUserIndexedPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, content.Vertices, 0, content.Vertices.Length, content.Indices, 0, content.Indices.Length / 3)
         )
 
-let drawSphere (viewMatrix: Matrix) (device: GraphicsDevice) state content =
+let drawSphere (viewMatrix: Matrix) (clipPlane: Vector4) (device: GraphicsDevice) state content =
     let effect = content.Effects.GroundFromAtmosphere
 
     let sphereWorld = Matrix.Multiply(Matrix.CreateTranslation(0.0f, 1.5f, 0.0f), Matrix.CreateScale(10.0f))
@@ -47,6 +47,7 @@ let drawSphere (viewMatrix: Matrix) (device: GraphicsDevice) state content =
     effect.Parameters.["xView"].SetValue(viewMatrix)
     effect.Parameters.["xProjection"].SetValue(content.Projection)
     effect.Parameters.["xLightDirection"].SetValue(state.LightDirection)
+    effect.Parameters.["xClipPlane"].SetValue(clipPlane)
     effect.Parameters.["xAmbient"].SetValue(0.5f)
         
     effect.CurrentTechnique.Passes |> Seq.iter
@@ -68,7 +69,7 @@ let drawDebug (texture: Texture2D) (device: GraphicsDevice) content =
 
 let drawApartFromSky (device: GraphicsDevice) state content x (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane: Vector4)  =
     drawTerrain x viewMatrix worldMatrix clipPlane device state content
-    drawSphere viewMatrix device state content
+    drawSphere viewMatrix clipPlane device state content
 
 let draw (gameTime: GameTime) (device: GraphicsDevice) state content =
     let time = (single gameTime.TotalGameTime.TotalMilliseconds) / 100.0f

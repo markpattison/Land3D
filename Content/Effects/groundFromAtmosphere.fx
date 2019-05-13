@@ -517,6 +517,7 @@ struct ColouredVertexToPixel
     float3 WorldPosition : TEXCOORD0;
     float3 ScatteringColour : COLOR0;
     float3 Attenuation : COLOR1;
+	float ClipDistance : TEXCOORD1;
 };
 
 ColouredVertexToPixel ColouredVS(float4 inPos : SV_POSITION, float3 inNormal : NORMAL)
@@ -532,6 +533,7 @@ ColouredVertexToPixel ColouredVS(float4 inPos : SV_POSITION, float3 inNormal : N
     float4 worldPosition = mul(inPos, xWorld);
     Output.Position = mul(inPos, preWorldViewProjection);
     Output.WorldPosition = worldPosition.xyz;
+	Output.ClipDistance = dot(worldPosition, xClipPlane);
 
     ScatteringResult scattering = Scattering(worldPosition.xyz);
 
@@ -543,6 +545,7 @@ ColouredVertexToPixel ColouredVS(float4 inPos : SV_POSITION, float3 inNormal : N
 
 PixelToFrame ColouredPS(ColouredVertexToPixel PSInput)
 {
+	clip(PSInput.ClipDistance);
     PixelToFrame Output = (PixelToFrame) 0;
 
     Output.Color = float4(1.0, 1.0, 1.0, 1.0);
