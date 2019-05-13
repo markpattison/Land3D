@@ -4,7 +4,7 @@ open Microsoft.Xna.Framework
 
 open FreeCamera
 
-type GameState =
+type State =
     {
         LightDirection: Vector3
         Camera: FreeCamera
