@@ -17,7 +17,7 @@ type Sky =
         Device: GraphicsDevice
     }
 
-let prepareSky effects atmosphere device =
+let prepare effects atmosphere device =
 
     let effect = effects.SkyFromAtmosphere
     let skySphere = Sphere.create 4
