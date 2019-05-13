@@ -35,6 +35,7 @@ type Input(keyboardState: KeyboardState,
     member _this.PageUp = keyboardState.IsKeyDown(Keys.PageUp)
     member _this.PageDown = keyboardState.IsKeyDown(Keys.PageDown)
     member _this.Fire = (mouseState.LeftButton = ButtonState.Pressed) && (oldMouseState.LeftButton = ButtonState.Released)
+    member _this.Debug = justPressed(Keys.D)
 
     member _this.Updated(keyboard: KeyboardState, mouse: MouseState, window : GameWindow) =
         Input(keyboard, keyboardState, mouse, mouseState, window, originalMouseState, mouseX, mouseY)

@@ -85,7 +85,10 @@ let draw (gameTime: GameTime) (device: GraphicsDevice) state content =
     Water.drawWater content.Water time world view content.Projection state.LightDirection state.Camera waterReflectionView
     Sky.drawSkyDome content.Sky world content.Projection state.LightDirection state.Camera.Position view
     
-    //drawDebug content.Water.RefractionRenderTarget device content
+    match state.DebugOption with
+    | None -> ()
+    | ReflectionMap -> drawDebug content.Water.ReflectionRenderTarget device content
+    | RefractionMap -> drawDebug content.Water.RefractionRenderTarget device content
 
     device.SetRenderTarget(null)
 

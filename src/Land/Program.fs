@@ -37,6 +37,7 @@ type LandGame() as _this =
             LightDirection = Vector3.Normalize(Vector3(0.0f, -0.5f, -1.0f))
             Camera = FreeCamera(Vector3(0.0f, 10.0f, -(single content.Terrain.Size) / 2.0f), 0.0f, 0.0f)
             Exiting = false
+            DebugOption = None
         }
 
     override _this.Update(gameTime) =
