@@ -181,12 +181,31 @@ PixelToFrame DebugPS(VertexToPixel PSIn)
 	return Output;
 }
 
+PixelToFrame DebugShadowPS(VertexToPixel PSIn)
+{
+	PixelToFrame Output = (PixelToFrame)0;
+
+	Output.Color.rgb = tex2D(DebugTextureSampler, PSIn.TextureCoords).r;
+	Output.Color.a = 1.0;
+
+	return Output;
+}
+
 technique Debug
 {
 	pass Pass0
 	{
 		VertexShader = compile vs_4_0 DebugVS();
 		PixelShader = compile ps_4_0 DebugPS();
+	}
+}
+
+technique DebugShadow
+{
+	pass Pass0
+	{
+		VertexShader = compile vs_4_0 DebugVS();
+		PixelShader = compile ps_4_0 DebugShadowPS();
 	}
 }
 
@@ -352,4 +371,49 @@ technique PointSprites
 		VertexShader = compile vs_4_0 PointSpriteVS();
 		PixelShader = compile ps_4_0 PointSpritePS();
 	}
+}
+
+// Shadow map
+
+float4x4 xLightsViewProjection;
+
+struct SMapVertexToPixel
+{
+    float4 Position     : POSITION;
+    float4 Position2D    : TEXCOORD0;
+};
+
+struct SMapPixelToFrame
+{
+    float Color : COLOR0;
+};
+
+SMapVertexToPixel ShadowMapVertexShader( float4 inPos : POSITION)
+{
+    float4x4 preLightsWorldViewProjection = mul(xWorld, xLightsViewProjection);
+	
+	SMapVertexToPixel Output = (SMapVertexToPixel)0;
+
+    Output.Position = mul(inPos, preLightsWorldViewProjection);
+    Output.Position2D = Output.Position;
+
+    return Output;
+}
+
+SMapPixelToFrame ShadowMapPixelShader(SMapVertexToPixel PSIn)
+{
+    SMapPixelToFrame Output = (SMapPixelToFrame)0;            
+
+    Output.Color = PSIn.Position2D.z/PSIn.Position2D.w;
+
+    return Output;
+}
+
+technique ShadowMap
+{
+    pass Pass0
+    {
+        VertexShader = compile vs_4_0 ShadowMapVertexShader();
+        PixelShader = compile ps_4_0 ShadowMapPixelShader();
+    }
 }

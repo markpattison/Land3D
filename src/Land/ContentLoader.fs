@@ -52,13 +52,13 @@ let load (device: GraphicsDevice) (contentManager: ContentManager) =
 
     let debugVertices =
         [|
-            VertexPositionTexture(Vector3(-0.9f, 0.5f, 0.0f), new Vector2(0.0f, 0.0f));
-            VertexPositionTexture(Vector3(-0.9f, 0.9f, 0.0f), new Vector2(0.0f, 1.0f));
-            VertexPositionTexture(Vector3(-0.5f, 0.5f, 0.0f), new Vector2(1.0f, 0.0f));
+            VertexPositionTexture(Vector3(-0.9f, 0.5f, 0.0f), new Vector2(0.0f, 1.0f));
+            VertexPositionTexture(Vector3(-0.9f, 0.9f, 0.0f), new Vector2(0.0f, 0.0f));
+            VertexPositionTexture(Vector3(-0.5f, 0.5f, 0.0f), new Vector2(1.0f, 1.0f));
 
-            VertexPositionTexture(Vector3(-0.5f, 0.5f, 0.0f), new Vector2(1.0f, 0.0f));
-            VertexPositionTexture(Vector3(-0.9f, 0.9f, 0.0f), new Vector2(0.0f, 1.0f));
-            VertexPositionTexture(Vector3(-0.5f, 0.9f, 0.0f), new Vector2(1.0f, 1.0f));
+            VertexPositionTexture(Vector3(-0.5f, 0.5f, 0.0f), new Vector2(1.0f, 1.0f));
+            VertexPositionTexture(Vector3(-0.9f, 0.9f, 0.0f), new Vector2(0.0f, 0.0f));
+            VertexPositionTexture(Vector3(-0.5f, 0.9f, 0.0f), new Vector2(1.0f, 0.0f));
         |]
     
     let perlinTexture3D = PerlinNoiseTexture3D.create device 16
@@ -75,7 +75,9 @@ let load (device: GraphicsDevice) (contentManager: ContentManager) =
         SpriteBatch = new SpriteBatch(device)
         Effects = effects
         Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 5000.0f)
+        LightsProjection = Matrix.CreateOrthographic(200.0f, 200.0f, 10.0f, 1000.0f)
         HdrRenderTarget = new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)
+        ShadowMap = new RenderTarget2D(device, 3200, 3200, false, SurfaceFormat.Single, DepthFormat.Depth16)
         Atmosphere = atmosphere
         Sky = Sky.prepare effects.SkyFromAtmosphere atmosphere device
         Water = Water.prepare effects.GroundFromAtmosphere perlinTexture3D waterParameters device 3000.0f

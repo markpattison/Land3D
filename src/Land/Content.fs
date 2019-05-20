@@ -16,7 +16,9 @@ type Content =
         SpriteBatch: SpriteBatch
         Effects: Effects
         Projection: Matrix
+        LightsProjection: Matrix
         HdrRenderTarget: RenderTarget2D
+        ShadowMap: RenderTarget2D
         Atmosphere: Atmosphere
         Sky: Sky
         Water: Water

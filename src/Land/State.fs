@@ -6,11 +6,13 @@ open FreeCamera
 
 type DebugOption =
     | None
+    | ShadowMap
     | ReflectionMap
     | RefractionMap
     member _this.Next =
         match _this with
-        | None -> ReflectionMap
+        | None -> ShadowMap
+        | ShadowMap -> ReflectionMap
         | ReflectionMap -> RefractionMap
         | RefractionMap -> None
 

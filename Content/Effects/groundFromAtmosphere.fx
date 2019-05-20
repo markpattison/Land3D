@@ -6,6 +6,7 @@ float4x4 xReflectionView;
 float4x4 xProjection;
 float4x4 xWorld;
 float3 xLightDirection;
+float4x4 xLightsViewProjection;
 float4 xClipPlane;
 float xAmbient;
 float3 xCameraPosition;
@@ -90,6 +91,9 @@ sampler RefractionSampler = sampler_state { texture = <xRefractionMap>; magfilte
 texture xRandomTexture3D;
 sampler RandomTextureSampler3D = sampler_state { texture = <xRandomTexture3D>; AddressU = WRAP; AddressV = WRAP; AddressW = WRAP; };
 
+texture xShadowMap;
+sampler ShadowMapSampler = sampler_state { texture = <xShadowMap> ; magfilter = LINEAR; minfilter = LINEAR; mipfilter=LINEAR; AddressU = clamp; AddressV = clamp;};
+
 struct GroundFromAtmosphere_ToVertex
 {
 	float4 Position : SV_POSITION;
@@ -107,6 +111,7 @@ struct GroundFromAtmosphere_VertexToPixel
 	float ClipDistance : TEXCOORD2;
 	float Depth : TEXCOORD4;
 	float3 WorldPosition: TEXCOORD5;
+	float4 PositionFromLight: TEXCOORD6;
 };
 
 struct PixelToFrame
@@ -297,9 +302,11 @@ GroundFromAtmosphere_VertexToPixel GroundFromAtmosphereVS(GroundFromAtmosphere_T
 
 	float4x4 preViewProjection = mul(xView, xProjection);
 	float4x4 preWorldViewProjection = mul(xWorld, preViewProjection);
+	float4x4 preLightsWorldViewProjection = mul(xWorld, xLightsViewProjection);
 
 	float4 worldPosition = mul(VSInput.Position, xWorld);
 	output.WorldPosition = worldPosition.xyz;
+	output.PositionFromLight = mul(VSInput.Position, preLightsWorldViewProjection);
 	output.Position = mul(VSInput.Position, preWorldViewProjection);
 	output.TextureCoords = VSInput.TexCoords;
 
@@ -336,6 +343,13 @@ PixelToFrame GroundFromAtmospherePS(GroundFromAtmosphere_VertexToPixel PSInput)
 {
 	clip(PSInput.ClipDistance);
     PixelToFrame output = (PixelToFrame) 0;
+
+	// shadow map
+    float2 ProjectedTexCoords;
+    ProjectedTexCoords[0] = PSInput.PositionFromLight.x / PSInput.PositionFromLight.w / 2.0f + 0.5f;
+    ProjectedTexCoords[1] = -PSInput.PositionFromLight.y / PSInput.PositionFromLight.w / 2.0f + 0.5f;
+	float depthStoredInShadowMap = tex2D(ShadowMapSampler, ProjectedTexCoords).r;
+	float realDistance = PSInput.PositionFromLight.z / PSInput.PositionFromLight.w;
 
     float4 weights;
 
@@ -377,7 +391,10 @@ PixelToFrame GroundFromAtmospherePS(GroundFromAtmosphere_VertexToPixel PSInput)
     float specular = dot(normalize(reflectionVector), normalize(PSInput.WorldPosition - xCameraPosition));
     specular = pow(max(specular, 0.0), 256) * weights.w; // specular on snow only
 
-    float lightingFactor = clamp(dot(normal, -xLightDirection), 0.0, 1.0);
+	float lightingFactor =
+		((realDistance - 1.0f/100.0f) <= depthStoredInShadowMap)
+		? lightingFactor = clamp(dot(normal, -xLightDirection), 0.0, 1.0)
+		: 0.0f;
 
 	output.Color = lerp(nearColour, farColour, blendFactor);
     output.Color.rgb *= (saturate(lightingFactor) + xAmbient);
@@ -518,6 +535,7 @@ struct ColouredVertexToPixel
     float3 ScatteringColour : COLOR0;
     float3 Attenuation : COLOR1;
 	float ClipDistance : TEXCOORD1;
+	float4 PositionFromLight: TEXCOORD2;
 };
 
 ColouredVertexToPixel ColouredVS(float4 inPos : SV_POSITION, float3 inNormal : NORMAL)
@@ -526,6 +544,7 @@ ColouredVertexToPixel ColouredVS(float4 inPos : SV_POSITION, float3 inNormal : N
 
     float4x4 preViewProjection = mul(xView, xProjection);
     float4x4 preWorldViewProjection = mul(xWorld, preViewProjection);
+	float4x4 preLightsWorldViewProjection = mul(xWorld, xLightsViewProjection);
 
     float3 normal = normalize(mul(float4(normalize(inNormal), 0.0), xWorld)).xyz;
     Output.Normal = normal;
@@ -533,6 +552,7 @@ ColouredVertexToPixel ColouredVS(float4 inPos : SV_POSITION, float3 inNormal : N
     float4 worldPosition = mul(inPos, xWorld);
     Output.Position = mul(inPos, preWorldViewProjection);
     Output.WorldPosition = worldPosition.xyz;
+	Output.PositionFromLight = mul(inPos, preLightsWorldViewProjection);
 	Output.ClipDistance = dot(worldPosition, xClipPlane);
 
     ScatteringResult scattering = Scattering(worldPosition.xyz);
@@ -548,6 +568,13 @@ PixelToFrame ColouredPS(ColouredVertexToPixel PSInput)
 	clip(PSInput.ClipDistance);
     PixelToFrame Output = (PixelToFrame) 0;
 
+	// shadow map
+    float2 ProjectedTexCoords;
+    ProjectedTexCoords[0] = PSInput.PositionFromLight.x / PSInput.PositionFromLight.w / 2.0f + 0.5f;
+    ProjectedTexCoords[1] = -PSInput.PositionFromLight.y / PSInput.PositionFromLight.w / 2.0f + 0.5f;
+	float depthStoredInShadowMap = tex2D(ShadowMapSampler, ProjectedTexCoords).r;
+	float realDistance = PSInput.PositionFromLight.z / PSInput.PositionFromLight.w;
+
     Output.Color = float4(1.0, 1.0, 1.0, 1.0);
 
     float3 normal = PSInput.Normal;
@@ -556,7 +583,10 @@ PixelToFrame ColouredPS(ColouredVertexToPixel PSInput)
     float specular = dot(normalize(reflectionVector), normalize(PSInput.WorldPosition - xCameraPosition));
     specular = pow(max(specular, 0.0), 256);
 
-    float lightingFactor = clamp(dot(normal, -xLightDirection), 0.0, 1.0);
+	float lightingFactor =
+		((realDistance - 1.0f/100.0f) <= depthStoredInShadowMap)
+		? lightingFactor = clamp(dot(normal, -xLightDirection), 0.0, 1.0)
+		: 0.0f;
 
     Output.Color.rgb *= (saturate(lightingFactor) + xAmbient);
     Output.Color.rgb += specular;

@@ -4,18 +4,26 @@ open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
 open VertexPositionNormal
-open Effects
-open Textures
 
-let drawTerrain (x: bool) (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane: Vector4) (device: GraphicsDevice) state content =
+let drawTerrainVertices (effect: Effect) (worldMatrix: Matrix) (device: GraphicsDevice) content =
+    effect.Parameters.["xWorld"].SetValue(worldMatrix)
+
+    effect.CurrentTechnique.Passes |> Seq.iter
+        (fun pass ->
+            pass.Apply()
+            device.DrawUserIndexedPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, content.Vertices, 0, content.Vertices.Length, content.Indices, 0, content.Indices.Length / 3)
+        )
+
+let drawTerrain (x: bool) (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane: Vector4) (device: GraphicsDevice) state content (lightViewProjection: Matrix) =
     let effect = content.Effects.GroundFromAtmosphere
 
     effect.CurrentTechnique <- effect.Techniques.["GroundFromAtmosphere"]
-    effect.Parameters.["xWorld"].SetValue(worldMatrix)
     effect.Parameters.["xView"].SetValue(viewMatrix)
     effect.Parameters.["xProjection"].SetValue(content.Projection)
     effect.Parameters.["xCameraPosition"].SetValue(state.Camera.Position)
     effect.Parameters.["xLightDirection"].SetValue(state.LightDirection)
+    effect.Parameters.["xLightsViewProjection"].SetValue(lightViewProjection)
+    effect.Parameters.["xShadowMap"].SetValue(content.ShadowMap)
     effect.Parameters.["xGrassTexture"].SetValue(content.Textures.Grass)
     effect.Parameters.["xRockTexture"].SetValue(content.Textures.Rock)
     effect.Parameters.["xSandTexture"].SetValue(content.Textures.Sand)
@@ -32,23 +40,12 @@ let drawTerrain (x: bool) (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane:
 
     device.BlendState <- BlendState.Opaque
 
-    effect.CurrentTechnique.Passes |> Seq.iter
-        (fun pass ->
-            pass.Apply()
-            device.DrawUserIndexedPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, content.Vertices, 0, content.Vertices.Length, content.Indices, 0, content.Indices.Length / 3)
-        )
+    drawTerrainVertices effect worldMatrix device content
 
-let drawSphere (viewMatrix: Matrix) (clipPlane: Vector4) (device: GraphicsDevice) state content =
-    let effect = content.Effects.GroundFromAtmosphere
-
+let drawSphereVertices (effect: Effect) (device: GraphicsDevice) content =
     let sphereWorld = Matrix.Multiply(Matrix.CreateTranslation(0.0f, 1.5f, 0.0f), Matrix.CreateScale(10.0f))
-    effect.CurrentTechnique <- effect.Techniques.["Coloured"]
+
     effect.Parameters.["xWorld"].SetValue(sphereWorld)
-    effect.Parameters.["xView"].SetValue(viewMatrix)
-    effect.Parameters.["xProjection"].SetValue(content.Projection)
-    effect.Parameters.["xLightDirection"].SetValue(state.LightDirection)
-    effect.Parameters.["xClipPlane"].SetValue(clipPlane)
-    effect.Parameters.["xAmbient"].SetValue(0.5f)
         
     effect.CurrentTechnique.Passes |> Seq.iter
         (fun pass ->
@@ -56,9 +53,26 @@ let drawSphere (viewMatrix: Matrix) (clipPlane: Vector4) (device: GraphicsDevice
             device.DrawUserIndexedPrimitives<VertexPositionNormal>(PrimitiveType.TriangleList, content.SphereVertices, 0, content.SphereVertices.Length, content.SphereIndices, 0, content.SphereIndices.Length / 3)
         )
 
-let drawDebug (texture: Texture2D) (device: GraphicsDevice) content =
+let drawSphere (viewMatrix: Matrix) (clipPlane: Vector4) (device: GraphicsDevice) state content (lightViewProjection: Matrix) =
+    let effect = content.Effects.GroundFromAtmosphere
+
+    effect.CurrentTechnique <- effect.Techniques.["Coloured"]
+    effect.Parameters.["xView"].SetValue(viewMatrix)
+    effect.Parameters.["xProjection"].SetValue(content.Projection)
+    effect.Parameters.["xLightDirection"].SetValue(state.LightDirection)
+    effect.Parameters.["xLightsViewProjection"].SetValue(lightViewProjection)
+    effect.Parameters.["xShadowMap"].SetValue(content.ShadowMap)
+    effect.Parameters.["xClipPlane"].SetValue(clipPlane)
+    effect.Parameters.["xAmbient"].SetValue(0.5f)
+    
+    drawSphereVertices effect device content
+
+let drawDebug (texture: Texture2D) (device: GraphicsDevice) content (isShadow: bool) =
     let effect = content.Effects.Effect
-    effect.CurrentTechnique <- effect.Techniques.["Debug"]
+
+    effect.CurrentTechnique <-
+        if isShadow then effect.Techniques.["DebugShadow"] else effect.Techniques.["Debug"]
+    
     effect.Parameters.["xDebugTexture"].SetValue(texture)
 
     effect.CurrentTechnique.Passes |> Seq.iter
@@ -67,9 +81,22 @@ let drawDebug (texture: Texture2D) (device: GraphicsDevice) content =
             device.DrawUserPrimitives<VertexPositionTexture>(PrimitiveType.TriangleList, content.DebugVertices, 0, content.DebugVertices.Length / 3)
         )
 
-let drawApartFromSky (device: GraphicsDevice) state content x (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane: Vector4)  =
-    drawTerrain x viewMatrix worldMatrix clipPlane device state content
-    drawSphere viewMatrix clipPlane device state content
+let drawApartFromSky (device: GraphicsDevice) state content (lightViewProjection: Matrix) x (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane: Vector4) =
+    drawTerrain x viewMatrix worldMatrix clipPlane device state content lightViewProjection
+    drawSphere viewMatrix clipPlane device state content lightViewProjection
+
+let drawShadowMap (device: GraphicsDevice) content (worldMatrix: Matrix) (lightViewProjection: Matrix) =
+    device.SetRenderTarget(content.ShadowMap)
+    device.Clear(Color.White)
+    device.BlendState <- BlendState.Opaque
+
+    let effect = content.Effects.Effect
+
+    effect.CurrentTechnique <- effect.Techniques.["ShadowMap"]
+    effect.Parameters.["xLightsViewProjection"].SetValue(lightViewProjection)
+
+    drawSphereVertices effect device content
+    drawTerrainVertices effect worldMatrix device content
 
 let draw (gameTime: GameTime) (device: GraphicsDevice) state content =
     let time = (single gameTime.TotalGameTime.TotalMilliseconds) / 100.0f
@@ -77,19 +104,25 @@ let draw (gameTime: GameTime) (device: GraphicsDevice) state content =
     let view = state.Camera.ViewMatrix
     let world = Matrix.Identity
 
-    let waterReflectionView = Water.prepareFrameAndReturnReflectionView content.Water view world state.Camera (drawApartFromSky device state content) (Sky.drawSkyDome content.Sky world content.Projection state.LightDirection state.Camera.Position)
+    let lightView = Matrix.CreateLookAt(-500.0f * state.LightDirection, Vector3.Zero, Vector3.Transform(state.LightDirection, Matrix.CreateRotationX(0.5f * MathHelper.Pi)))
+    let lightViewProjection = lightView * content.LightsProjection
+
+    drawShadowMap device content world lightViewProjection
+
+    let waterReflectionView = Water.prepareFrameAndReturnReflectionView content.Water view world state.Camera (drawApartFromSky device state content lightViewProjection) (Sky.drawSkyDome content.Sky world content.Projection state.LightDirection state.Camera.Position)
 
     device.SetRenderTarget(content.HdrRenderTarget)
 
     do device.Clear(Color.Black)
-    drawApartFromSky device state content false view world Vector4.Zero // no clip plane
+    drawApartFromSky device state content lightViewProjection false view world Vector4.Zero // no clip plane
     Water.drawWater content.Water time world view content.Projection state.LightDirection state.Camera waterReflectionView
     Sky.drawSkyDome content.Sky world content.Projection state.LightDirection state.Camera.Position view
     
     match state.DebugOption with
     | None -> ()
-    | ReflectionMap -> drawDebug content.Water.ReflectionRenderTarget device content
-    | RefractionMap -> drawDebug content.Water.RefractionRenderTarget device content
+    | ShadowMap -> drawDebug content.ShadowMap device content true
+    | ReflectionMap -> drawDebug content.Water.ReflectionRenderTarget device content false
+    | RefractionMap -> drawDebug content.Water.RefractionRenderTarget device content false
 
     device.SetRenderTarget(null)
 
