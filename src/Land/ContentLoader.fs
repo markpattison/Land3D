@@ -69,7 +69,7 @@ let load (device: GraphicsDevice) (contentManager: ContentManager) =
 
     let atmosphere = atmosphereParameters |> Atmosphere.prepare
 
-    let effects = Effects.load contentManager atmosphere
+    let effects = Effects.load contentManager atmosphere waterParameters
 
     {
         SpriteBatch = new SpriteBatch(device)

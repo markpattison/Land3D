@@ -32,8 +32,6 @@ let applyToEffect waterParameters (effect: Effect) =
     effect.Parameters.["xWaveHeight"].SetValue(waterParameters.WaveHeight)
     effect.Parameters.["xWindForce"].SetValue(waterParameters.WindForce)
     effect.Parameters.["xWindDirection"].SetValue(waterParameters.WindDirection)
-
-let applyToGroundEffect waterParameters (effect: Effect) =
     effect.Parameters.["xWaterOpacity"].SetValue(waterParameters.Opacity)
 
 let waterVertices waterSize =
@@ -99,8 +97,6 @@ let drawWater water (time: single) (world: Matrix) (view: Matrix) (projection: M
     water.Effect.Parameters.["xTime"].SetValue(time)
     water.Effect.Parameters.["xRandomTexture3D"].SetValue(water.PerlinTexture3D)
     water.Effect.Parameters.["xPerlinSize3D"].SetValue(15.0f)
-
-    applyToEffect water.WaterParameters water.Effect
 
     water.Effect.CurrentTechnique.Passes |> Seq.iter
         (fun pass ->

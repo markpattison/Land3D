@@ -41,9 +41,9 @@
     <Compile Include="FreeCamera.fs" />
     <Compile Include="Sphere.fs" />
     <Compile Include="Atmosphere.fs" />
+    <Compile Include="Water.fs" />
     <Compile Include="Effects.fs" />
     <Compile Include="Sky.fs" />
-    <Compile Include="Water.fs" />
     <Compile Include="State.fs" />
     <Compile Include="Content.fs" />
     <Compile Include="ContentLoader.fs" />
