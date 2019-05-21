@@ -59,16 +59,16 @@ let prepare (effect: Effect) (perlinTexture3D: Texture3D) (waterParameters: Wate
         Device = device
     }
 
-let drawRefractionMap water drawTerrain view world =
+let drawRefractionMap water drawTerrain view =
     water.Device.SetRenderTarget(water.RefractionRenderTarget)
     water.Device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
-    drawTerrain view world water.RefractionClipPlane
+    drawTerrain view water.RefractionClipPlane
     water.Device.SetRenderTarget(null)
 
-let drawReflectionMap water drawTerrain drawSkyDome reflectionView world =
+let drawReflectionMap water drawTerrain drawSkyDome reflectionView =
     water.Device.SetRenderTarget(water.ReflectionRenderTarget)
     water.Device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
-    drawTerrain reflectionView world water.ReflectionClipPlane
+    drawTerrain reflectionView water.ReflectionClipPlane
     drawSkyDome reflectionView
     water.Device.SetRenderTarget(null)
 
@@ -78,10 +78,10 @@ let calculateReflectionView (camera: FreeCamera) =
     let invUpVector = Vector3.Cross(camera.RightDirection, reflectionCameraLookAt - reflectionCameraAt)
     Matrix.CreateLookAt(reflectionCameraAt, reflectionCameraLookAt, invUpVector)
 
-let prepareFrameAndReturnReflectionView water view world camera drawTerrain drawSkyDome =
+let prepareFrameAndReturnReflectionView water view camera drawTerrain drawSkyDome =
     let reflectionView = calculateReflectionView camera
-    drawRefractionMap water (drawTerrain true) view world
-    drawReflectionMap water (drawTerrain true) drawSkyDome reflectionView world
+    drawRefractionMap water (drawTerrain true) view
+    drawReflectionMap water (drawTerrain true) drawSkyDome reflectionView
     reflectionView
 
 let drawWater water (time: single) (world: Matrix) (view: Matrix) (lightDirection: Vector3) (camera: FreeCamera) (reflectionView: Matrix) =
