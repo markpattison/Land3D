@@ -5,7 +5,6 @@ open Microsoft.Xna.Framework.Graphics
 
 open VertexPositionNormal
 open Effects
-open Textures
 open Terrain
 open Water
 open Sky
@@ -27,7 +26,6 @@ type Content =
         Indices: int[]
         Terrain: Terrain
         MinMaxTerrainHeight: Vector2
-        Textures: Textures
         PerlinTexture3D: Texture3D
         SphereVertices: VertexPositionNormal[]
         SphereIndices: int[]

@@ -86,7 +86,6 @@ let load (device: GraphicsDevice) (contentManager: ContentManager) =
         Indices = indices
         Terrain = terrain
         MinMaxTerrainHeight = minMaxTerrainHeight
-        Textures = Textures.load contentManager
         PerlinTexture3D = perlinTexture3D
         SphereVertices = sphereVerts
         SphereIndices = sphereInds
