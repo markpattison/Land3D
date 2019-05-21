@@ -67,9 +67,9 @@ let load (device: GraphicsDevice) (contentManager: ContentManager) =
 
     let (sphereVerts, sphereInds) = Sphere.getVerticesAndIndices Smooth OutwardFacing Even sphere
 
-    let effects = Effects.load contentManager
-
     let atmosphere = atmosphereParameters |> Atmosphere.prepare
+
+    let effects = Effects.load contentManager atmosphere
 
     {
         SpriteBatch = new SpriteBatch(device)

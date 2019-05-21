@@ -62,8 +62,6 @@ let drawSkyDome sky (world: Matrix) (projection: Matrix) (lightDirection: Vector
     effect.Parameters.["xCameraPosition"].SetValue(cameraPosition)
     effect.Parameters.["xLightDirection"].SetValue(lightDirection)
 
-    Atmosphere.applyToEffect sky.Atmosphere effect
-
     if wireframe then
         let rs' = new RasterizerState()
         rs'.FillMode <- FillMode.WireFrame
