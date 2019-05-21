@@ -30,7 +30,7 @@ let prepare effect atmosphere device =
         Device = device
     }
 
-let drawSkyDome sky (world: Matrix) (projection: Matrix) (lightDirection: Vector3) (cameraPosition: Vector3) (view: Matrix) =
+let drawSkyDome sky (world: Matrix) (lightDirection: Vector3) (cameraPosition: Vector3) (view: Matrix) =
     
     let wireframe = false
 
@@ -58,7 +58,6 @@ let drawSkyDome sky (world: Matrix) (projection: Matrix) (lightDirection: Vector
     effect.CurrentTechnique <- effect.Techniques.["SkyFromAtmosphere"]
     effect.Parameters.["xWorld"].SetValue(skyWorld)
     effect.Parameters.["xView"].SetValue(view)
-    effect.Parameters.["xProjection"].SetValue(projection)
     effect.Parameters.["xCameraPosition"].SetValue(cameraPosition)
     effect.Parameters.["xLightDirection"].SetValue(lightDirection)
 

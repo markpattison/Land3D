@@ -19,7 +19,6 @@ let drawTerrain (x: bool) (viewMatrix: Matrix) (worldMatrix: Matrix) (clipPlane:
 
     effect.CurrentTechnique <- effect.Techniques.["GroundFromAtmosphere"]
     effect.Parameters.["xView"].SetValue(viewMatrix)
-    effect.Parameters.["xProjection"].SetValue(content.Projection)
     effect.Parameters.["xCameraPosition"].SetValue(state.Camera.Position)
     effect.Parameters.["xLightDirection"].SetValue(state.LightDirection)
     effect.Parameters.["xLightsViewProjection"].SetValue(lightViewProjection)
@@ -51,7 +50,6 @@ let drawSphere (viewMatrix: Matrix) (clipPlane: Vector4) (device: GraphicsDevice
 
     effect.CurrentTechnique <- effect.Techniques.["Coloured"]
     effect.Parameters.["xView"].SetValue(viewMatrix)
-    effect.Parameters.["xProjection"].SetValue(content.Projection)
     effect.Parameters.["xLightDirection"].SetValue(state.LightDirection)
     effect.Parameters.["xLightsViewProjection"].SetValue(lightViewProjection)
     effect.Parameters.["xShadowMap"].SetValue(content.ShadowMap)
@@ -102,14 +100,14 @@ let draw (gameTime: GameTime) (device: GraphicsDevice) state content =
 
     drawShadowMap device content world lightViewProjection
 
-    let waterReflectionView = Water.prepareFrameAndReturnReflectionView content.Water view world state.Camera (drawApartFromSky device state content lightViewProjection) (Sky.drawSkyDome content.Sky world content.Projection state.LightDirection state.Camera.Position)
+    let waterReflectionView = Water.prepareFrameAndReturnReflectionView content.Water view world state.Camera (drawApartFromSky device state content lightViewProjection) (Sky.drawSkyDome content.Sky world state.LightDirection state.Camera.Position)
 
     device.SetRenderTarget(content.HdrRenderTarget)
 
     do device.Clear(Color.Black)
     drawApartFromSky device state content lightViewProjection false view world Vector4.Zero // no clip plane
-    Water.drawWater content.Water time world view content.Projection state.LightDirection state.Camera waterReflectionView
-    Sky.drawSkyDome content.Sky world content.Projection state.LightDirection state.Camera.Position view
+    Water.drawWater content.Water time world view state.LightDirection state.Camera waterReflectionView
+    Sky.drawSkyDome content.Sky world state.LightDirection state.Camera.Position view
     
     match state.DebugOption with
     | None -> ()

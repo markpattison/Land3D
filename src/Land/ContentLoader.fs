@@ -67,14 +67,15 @@ let load (device: GraphicsDevice) (contentManager: ContentManager) =
 
     let (sphereVerts, sphereInds) = Sphere.getVerticesAndIndices Smooth OutwardFacing Even sphere
 
+    let projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 5000.0f)
+
     let atmosphere = atmosphereParameters |> Atmosphere.prepare
 
-    let effects = Effects.load contentManager atmosphere waterParameters
+    let effects = Effects.load contentManager atmosphere waterParameters projection
 
     {
         SpriteBatch = new SpriteBatch(device)
         Effects = effects
-        Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 5000.0f)
         LightsProjection = Matrix.CreateOrthographic(200.0f, 200.0f, 10.0f, 1000.0f)
         HdrRenderTarget = new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, SurfaceFormat.HalfVector4, DepthFormat.Depth24)
         ShadowMap = new RenderTarget2D(device, 3200, 3200, false, SurfaceFormat.Single, DepthFormat.Depth16)

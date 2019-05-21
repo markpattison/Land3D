@@ -84,12 +84,11 @@ let prepareFrameAndReturnReflectionView water view world camera drawTerrain draw
     drawReflectionMap water (drawTerrain true) drawSkyDome reflectionView world
     reflectionView
 
-let drawWater water (time: single) (world: Matrix) (view: Matrix) (projection: Matrix) (lightDirection: Vector3) (camera: FreeCamera) (reflectionView: Matrix) =
+let drawWater water (time: single) (world: Matrix) (view: Matrix) (lightDirection: Vector3) (camera: FreeCamera) (reflectionView: Matrix) =
     water.Effect.CurrentTechnique <- water.Effect.Techniques.["Water"]
     water.Effect.Parameters.["xWorld"].SetValue(world)
     water.Effect.Parameters.["xView"].SetValue(view)
     water.Effect.Parameters.["xReflectionView"].SetValue(reflectionView)
-    water.Effect.Parameters.["xProjection"].SetValue(projection)
     water.Effect.Parameters.["xLightDirection"].SetValue(lightDirection)
     water.Effect.Parameters.["xCameraPosition"].SetValue(camera.Position)
     water.Effect.Parameters.["xReflectionMap"].SetValue(water.ReflectionRenderTarget)
