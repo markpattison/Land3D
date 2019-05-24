@@ -1,15 +1,14 @@
 ﻿// GroundFromAtmosphere
 
-// constants
+#include "scattering.fragment"
+
 float4x4 xView;
 float4x4 xReflectionView;
 float4x4 xProjection;
 float4x4 xWorld;
-float3 xLightDirection;
 float4x4 xLightsViewProjection;
 float4 xClipPlane;
 float xAmbient;
-float3 xCameraPosition;
 float2 xMinMaxHeight;
 
 float xWaterOpacity;
@@ -20,23 +19,6 @@ float xWaveLength;
 float xWaveHeight;
 float xPerlinSize3D;
 bool xAlphaAfterWaterDepthWeighting;
-
-float xG;
-float xGSquared;
-float3 xInvWavelength4;
-float xKrESun;
-float xKmESun;
-float xKr4Pi;
-float xKm4Pi;
-
-float xInnerRadius;
-float xOuterRadius;
-float xOuterRadiusSquared;
-float xScale;
-float xScaleDepth;
-float xScaleOverScaleDepth;
-
-int xSamples = 4;
 
 texture xGrassTexture;
 sampler GrassTextureSampler = sampler_state
@@ -231,69 +213,6 @@ float4 Perlin3DwithDerivatives(float3 pIn)
         noise);
 
     return derivAndNoise;
-}
-
-struct ScatteringResult
-{
-	float3 ScatteringColour;
-	float3 Attenuation;
-};
-
-float scale(float cos)
-{
-	float x = max(0.0, 1.0 - cos);
-	return xScaleDepth * exp(-0.00287 + x * (0.459 + x * (3.83 + x  *(-6.80 + x * 5.25))));
-}
-
-ScatteringResult Scattering(float3 worldPosition)
-{
-	ScatteringResult output = (ScatteringResult)0;
-
-	float3 cameraInPlanetSpace = xCameraPosition + float3(0.0, xInnerRadius, 0.0);
-	float3 vertexInPlanetSpace = worldPosition + float3(0.0, xInnerRadius, 0.0);
-
-	float3 viewDirection = normalize(vertexInPlanetSpace - cameraInPlanetSpace);
-	float distanceToVertex = length(vertexInPlanetSpace - cameraInPlanetSpace);
-	float vertexHeight = length(vertexInPlanetSpace);
-	float cameraHeight = length(cameraInPlanetSpace);
-	float startDepth = exp((xInnerRadius - cameraHeight) * xScaleOverScaleDepth);
-
-	float vertexHigher = (vertexHeight > cameraHeight) ? -1.0 : 1.0;
-
-	float cameraAngle = vertexHigher * dot(-viewDirection, vertexInPlanetSpace) / vertexHeight;
-	float lightAngle = -dot(xLightDirection, vertexInPlanetSpace) / vertexHeight;
-	float cameraScale = vertexHigher * scale(cameraAngle);
-	float lightScale = scale(lightAngle);
-	float cameraOffset = startDepth * cameraScale;
-	float totalScale = lightScale + cameraScale;
-
-	float sampleLength = distanceToVertex / xSamples;
-	float scaledLength = sampleLength * xScale;
-	float3 sampleRay = viewDirection * sampleLength;
-	float3 samplePoint = cameraInPlanetSpace + sampleRay * 0.5;
-	float3 attenuate;
-
-	float3 accumulatedColour = float3(0.0, 0.0, 0.0);
-	for (int i = 0; i < xSamples; i++)
-	{
-		float height = length(samplePoint);
-		float depth = exp(xScaleOverScaleDepth * (xInnerRadius - height));
-		float scatter = depth * totalScale - cameraOffset;
-		attenuate = exp(-scatter * (xInvWavelength4 * xKr4Pi + xKm4Pi));
-
-		accumulatedColour += attenuate * (depth * scaledLength);
-		samplePoint += sampleRay;
-	}
-
-	float finalHeight = length(vertexInPlanetSpace);
-	float finalDepth = exp(xScaleOverScaleDepth * (xInnerRadius - finalHeight));
-	float finalScatter = finalDepth * totalScale - cameraOffset;
-	float3 finalAttenuate = exp(-finalScatter * (xInvWavelength4 * xKr4Pi + xKm4Pi));
-
-	output.ScatteringColour = accumulatedColour * (xInvWavelength4 * xKrESun + xKmESun);
-	output.Attenuation = finalAttenuate;
-
-	return output;
 }
 
 GroundFromAtmosphere_VertexToPixel GroundFromAtmosphereVS(GroundFromAtmosphere_ToVertex VSInput)

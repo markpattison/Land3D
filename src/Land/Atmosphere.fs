@@ -45,10 +45,8 @@ let prepare atmosphereParameters =
         Inverse4thPowerWavelengths = Vector3(atmosphereParameters.Wavelengths.X ** -4.0f, atmosphereParameters.Wavelengths.Y ** -4.0f, atmosphereParameters.Wavelengths.Z ** -4.0f)
     }
 
-let applyToEffect atmosphere (effect: Effect) =
+let applyToGroundEffect atmosphere (effect: Effect) =
     effect.Parameters.["xInnerRadius"].SetValue(atmosphere.AtmosphereParameters.InnerRadius)
-    effect.Parameters.["xOuterRadius"].SetValue(atmosphere.AtmosphereParameters.OuterRadius)
-    effect.Parameters.["xOuterRadiusSquared"].SetValue(atmosphere.OuterRadiusSquared)
     effect.Parameters.["xScale"].SetValue(atmosphere.Scale)
     effect.Parameters.["xScaleDepth"].SetValue(atmosphere.AtmosphereParameters.ScaleDepth)
     effect.Parameters.["xScaleOverScaleDepth"].SetValue(atmosphere.ScaleOverScaleDepth)
@@ -56,6 +54,11 @@ let applyToEffect atmosphere (effect: Effect) =
     effect.Parameters.["xKmESun"].SetValue(atmosphere.KmESun)
     effect.Parameters.["xKr4Pi"].SetValue(atmosphere.Kr4Pi)
     effect.Parameters.["xKm4Pi"].SetValue(atmosphere.Km4Pi)
+    effect.Parameters.["xInvWavelength4"].SetValue(atmosphere.Inverse4thPowerWavelengths)
+
+let applyToSkyEffect atmosphere effect =
+    applyToGroundEffect atmosphere effect
+    effect.Parameters.["xOuterRadius"].SetValue(atmosphere.AtmosphereParameters.OuterRadius)
+    effect.Parameters.["xOuterRadiusSquared"].SetValue(atmosphere.OuterRadiusSquared)
     effect.Parameters.["xG"].SetValue(atmosphere.AtmosphereParameters.G)
     effect.Parameters.["xGSquared"].SetValue(atmosphere.GSquared)
-    effect.Parameters.["xInvWavelength4"].SetValue(atmosphere.Inverse4thPowerWavelengths)

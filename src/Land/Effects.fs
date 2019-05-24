@@ -37,7 +37,7 @@ type Effects =
 let private groundFromAtmosphere (contentManager: ContentManager) (atmosphere: Atmosphere.Atmosphere) (water: Water.WaterParameters) (projection: Matrix) (terrainMinMax: Vector2) =
     let effect = contentManager.Load<Effect>("Effects/groundFromAtmosphere")
 
-    Atmosphere.applyToEffect atmosphere effect
+    Atmosphere.applyToGroundEffect atmosphere effect
     Water.applyToEffect water effect
 
     effect.Parameters.["xProjection"].SetValue(projection)
@@ -73,7 +73,7 @@ let private shadowMapEffect (contentManager: ContentManager) =
 let load (contentManager: ContentManager) (atmosphere: Atmosphere.Atmosphere) (water: Water.WaterParameters) (projection: Matrix) (terrainMinMax: Vector2) =
 
     let skyFromAtmosphere = contentManager.Load<Effect>("Effects/skyFromAtmosphere")
-    Atmosphere.applyToEffect atmosphere skyFromAtmosphere
+    Atmosphere.applyToSkyEffect atmosphere skyFromAtmosphere
     skyFromAtmosphere.Parameters.["xProjection"].SetValue(projection)
 
     let shadowMap = contentManager.Load<Effect>("Effects/shadowMap")
