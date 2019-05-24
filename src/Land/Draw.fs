@@ -26,7 +26,6 @@ let drawTerrain (x: bool) (viewMatrix: Matrix) (clipPlane: Vector4) (device: Gra
     ground.SetClipPlane clipPlane
     ground.SetAmbient 0.5f
     ground.SetAlphaAfterWaterDepthWeighting x
-    ground.Effect.Parameters.["xMinMaxHeight"].SetValue(content.MinMaxTerrainHeight)
 
     device.BlendState <- BlendState.Opaque
 

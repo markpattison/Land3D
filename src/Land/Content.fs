@@ -24,7 +24,6 @@ type Content =
         DebugVertices: VertexPositionTexture[]
         Indices: int[]
         Terrain: Terrain
-        MinMaxTerrainHeight: Vector2
         PerlinTexture3D: Texture3D
         SphereVertices: VertexPositionNormal[]
         SphereIndices: int[]

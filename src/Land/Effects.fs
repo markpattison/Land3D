@@ -26,7 +26,7 @@ type Effects =
         GroundFromAtmosphere: GroundFromAtmosphereEffect
     }
 
-let private groundFromAtmosphere (contentManager: ContentManager) (atmosphere: Atmosphere.Atmosphere) (water: Water.WaterParameters) (projection: Matrix) =
+let private groundFromAtmosphere (contentManager: ContentManager) (atmosphere: Atmosphere.Atmosphere) (water: Water.WaterParameters) (projection: Matrix) (terrainMinMax: Vector2) =
     let groundFromAtmosphere = contentManager.Load<Effect>("Effects/groundFromAtmosphere")
 
     Atmosphere.applyToEffect atmosphere groundFromAtmosphere
@@ -37,6 +37,7 @@ let private groundFromAtmosphere (contentManager: ContentManager) (atmosphere: A
     groundFromAtmosphere.Parameters.["xRockTexture"].SetValue(contentManager.Load<Texture2D>("Textures/rock"))
     groundFromAtmosphere.Parameters.["xSandTexture"].SetValue(contentManager.Load<Texture2D>("Textures/sand"))
     groundFromAtmosphere.Parameters.["xSnowTexture"].SetValue(contentManager.Load<Texture2D>("Textures/snow"))
+    groundFromAtmosphere.Parameters.["xMinMaxHeight"].SetValue(terrainMinMax)
 
     {
         Effect = groundFromAtmosphere
@@ -51,7 +52,7 @@ let private groundFromAtmosphere (contentManager: ContentManager) (atmosphere: A
         SetAlphaAfterWaterDepthWeighting = groundFromAtmosphere.Parameters.["xAlphaAfterWaterDepthWeighting"].SetValue
     }
 
-let load (contentManager: ContentManager) (atmosphere: Atmosphere.Atmosphere) (water: Water.WaterParameters) (projection: Matrix) =
+let load (contentManager: ContentManager) (atmosphere: Atmosphere.Atmosphere) (water: Water.WaterParameters) (projection: Matrix) (terrainMinMax: Vector2) =
 
     let skyFromAtmosphere = contentManager.Load<Effect>("Effects/skyFromAtmosphere")
     Atmosphere.applyToEffect atmosphere skyFromAtmosphere
@@ -61,5 +62,5 @@ let load (contentManager: ContentManager) (atmosphere: Atmosphere.Atmosphere) (w
         Effect = contentManager.Load<Effect>("Effects/effects")
         Hdr = contentManager.Load<Effect>("Effects/hdr")
         SkyFromAtmosphere = skyFromAtmosphere
-        GroundFromAtmosphere = groundFromAtmosphere contentManager atmosphere water projection
+        GroundFromAtmosphere = groundFromAtmosphere contentManager atmosphere water projection terrainMinMax
     }

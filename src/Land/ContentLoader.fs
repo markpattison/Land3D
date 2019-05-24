@@ -71,7 +71,7 @@ let load (device: GraphicsDevice) (contentManager: ContentManager) =
 
     let atmosphere = atmosphereParameters |> Atmosphere.prepare
 
-    let effects = Effects.load contentManager atmosphere waterParameters projection
+    let effects = Effects.load contentManager atmosphere waterParameters projection minMaxTerrainHeight
 
     {
         SpriteBatch = new SpriteBatch(device)
@@ -86,7 +86,6 @@ let load (device: GraphicsDevice) (contentManager: ContentManager) =
         DebugVertices = debugVertices
         Indices = indices
         Terrain = terrain
-        MinMaxTerrainHeight = minMaxTerrainHeight
         PerlinTexture3D = perlinTexture3D
         SphereVertices = sphereVerts
         SphereIndices = sphereInds
