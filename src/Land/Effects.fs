@@ -35,29 +35,29 @@ type Effects =
     }
 
 let private groundFromAtmosphere (contentManager: ContentManager) (atmosphere: Atmosphere.Atmosphere) (water: Water.WaterParameters) (projection: Matrix) (terrainMinMax: Vector2) =
-    let groundFromAtmosphere = contentManager.Load<Effect>("Effects/groundFromAtmosphere")
+    let effect = contentManager.Load<Effect>("Effects/groundFromAtmosphere")
 
-    Atmosphere.applyToEffect atmosphere groundFromAtmosphere
-    Water.applyToEffect water groundFromAtmosphere
+    Atmosphere.applyToEffect atmosphere effect
+    Water.applyToEffect water effect
 
-    groundFromAtmosphere.Parameters.["xProjection"].SetValue(projection)
-    groundFromAtmosphere.Parameters.["xGrassTexture"].SetValue(contentManager.Load<Texture2D>("Textures/grass"))
-    groundFromAtmosphere.Parameters.["xRockTexture"].SetValue(contentManager.Load<Texture2D>("Textures/rock"))
-    groundFromAtmosphere.Parameters.["xSandTexture"].SetValue(contentManager.Load<Texture2D>("Textures/sand"))
-    groundFromAtmosphere.Parameters.["xSnowTexture"].SetValue(contentManager.Load<Texture2D>("Textures/snow"))
-    groundFromAtmosphere.Parameters.["xMinMaxHeight"].SetValue(terrainMinMax)
+    effect.Parameters.["xProjection"].SetValue(projection)
+    effect.Parameters.["xGrassTexture"].SetValue(contentManager.Load<Texture2D>("Textures/grass"))
+    effect.Parameters.["xRockTexture"].SetValue(contentManager.Load<Texture2D>("Textures/rock"))
+    effect.Parameters.["xSandTexture"].SetValue(contentManager.Load<Texture2D>("Textures/sand"))
+    effect.Parameters.["xSnowTexture"].SetValue(contentManager.Load<Texture2D>("Textures/snow"))
+    effect.Parameters.["xMinMaxHeight"].SetValue(terrainMinMax)
 
     {
-        Effect = groundFromAtmosphere
-        SetWorld = groundFromAtmosphere.Parameters.["xWorld"].SetValue
-        SetView = groundFromAtmosphere.Parameters.["xView"].SetValue
-        SetCameraPosition = groundFromAtmosphere.Parameters.["xCameraPosition"].SetValue
-        SetLightDirection = groundFromAtmosphere.Parameters.["xLightDirection"].SetValue
-        SetLightViewProjection = groundFromAtmosphere.Parameters.["xLightsViewProjection"].SetValue
-        SetShadowMap = groundFromAtmosphere.Parameters.["xShadowMap"].SetValue
-        SetClipPlane = groundFromAtmosphere.Parameters.["xClipPlane"].SetValue
-        SetAmbient = groundFromAtmosphere.Parameters.["xAmbient"].SetValue
-        SetAlphaAfterWaterDepthWeighting = groundFromAtmosphere.Parameters.["xAlphaAfterWaterDepthWeighting"].SetValue
+        Effect = effect
+        SetWorld = effect.Parameters.["xWorld"].SetValue
+        SetView = effect.Parameters.["xView"].SetValue
+        SetCameraPosition = effect.Parameters.["xCameraPosition"].SetValue
+        SetLightDirection = effect.Parameters.["xLightDirection"].SetValue
+        SetLightViewProjection = effect.Parameters.["xLightsViewProjection"].SetValue
+        SetShadowMap = effect.Parameters.["xShadowMap"].SetValue
+        SetClipPlane = effect.Parameters.["xClipPlane"].SetValue
+        SetAmbient = effect.Parameters.["xAmbient"].SetValue
+        SetAlphaAfterWaterDepthWeighting = effect.Parameters.["xAlphaAfterWaterDepthWeighting"].SetValue
     }
 
 let private shadowMapEffect (contentManager: ContentManager) =
