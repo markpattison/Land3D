@@ -18,12 +18,20 @@ type GroundFromAtmosphereEffect =
         SetAlphaAfterWaterDepthWeighting: bool -> unit
     }
 
+type ShadowMapEffect =
+    {
+        Effect: Effect
+        SetWorld: Matrix -> unit
+        SetLightViewProjection: Matrix -> unit
+    }
+
 type Effects =
     {
         Effect: Effect
         Hdr: Effect
         SkyFromAtmosphere: Effect
         GroundFromAtmosphere: GroundFromAtmosphereEffect
+        ShadowMap: ShadowMapEffect
     }
 
 let private groundFromAtmosphere (contentManager: ContentManager) (atmosphere: Atmosphere.Atmosphere) (water: Water.WaterParameters) (projection: Matrix) (terrainMinMax: Vector2) =
@@ -52,15 +60,29 @@ let private groundFromAtmosphere (contentManager: ContentManager) (atmosphere: A
         SetAlphaAfterWaterDepthWeighting = groundFromAtmosphere.Parameters.["xAlphaAfterWaterDepthWeighting"].SetValue
     }
 
+let private shadowMapEffect (contentManager: ContentManager) =
+    let effect = contentManager.Load<Effect>("Effects/shadowMap")
+    effect.CurrentTechnique <- effect.Techniques.["ShadowMap"]
+
+    {
+        Effect = effect
+        SetWorld = effect.Parameters.["xWorld"].SetValue
+        SetLightViewProjection = effect.Parameters.["xLightViewProjection"].SetValue
+    }
+
 let load (contentManager: ContentManager) (atmosphere: Atmosphere.Atmosphere) (water: Water.WaterParameters) (projection: Matrix) (terrainMinMax: Vector2) =
 
     let skyFromAtmosphere = contentManager.Load<Effect>("Effects/skyFromAtmosphere")
     Atmosphere.applyToEffect atmosphere skyFromAtmosphere
     skyFromAtmosphere.Parameters.["xProjection"].SetValue(projection)
 
+    let shadowMap = contentManager.Load<Effect>("Effects/shadowMap")
+    shadowMap.CurrentTechnique <- shadowMap.Techniques.["ShadowMap"]
+
     {
         Effect = contentManager.Load<Effect>("Effects/effects")
         Hdr = contentManager.Load<Effect>("Effects/hdr")
         SkyFromAtmosphere = skyFromAtmosphere
         GroundFromAtmosphere = groundFromAtmosphere contentManager atmosphere water projection terrainMinMax
+        ShadowMap = shadowMapEffect contentManager
     }

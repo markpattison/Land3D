@@ -31,10 +31,9 @@ let drawTerrain (x: bool) (viewMatrix: Matrix) (clipPlane: Vector4) (device: Gra
 
     drawTerrainVertices ground.Effect device content
 
-let drawSphereVertices (effect: Effect) (device: GraphicsDevice) content =
+let drawSphereVertices (effect: Effect) (setWorld: Matrix -> unit) (device: GraphicsDevice) content =
     let sphereWorld = Matrix.Multiply(Matrix.CreateTranslation(0.0f, 1.5f, 0.0f), Matrix.CreateScale(10.0f))
-
-    effect.Parameters.["xWorld"].SetValue(sphereWorld)
+    setWorld sphereWorld
         
     effect.CurrentTechnique.Passes |> Seq.iter
         (fun pass ->
@@ -53,7 +52,7 @@ let drawSphere (viewMatrix: Matrix) (clipPlane: Vector4) (device: GraphicsDevice
     ground.SetClipPlane clipPlane
     ground.SetAmbient 0.5f
     
-    drawSphereVertices ground.Effect device content
+    drawSphereVertices ground.Effect ground.SetWorld device content
 
 let drawDebug (texture: Texture2D) (device: GraphicsDevice) content (isShadow: bool) =
     let effect = content.Effects.Effect
@@ -74,18 +73,18 @@ let drawApartFromSky (device: GraphicsDevice) state content (lightViewProjection
     drawSphere viewMatrix clipPlane device state content lightViewProjection
 
 let drawShadowMap (device: GraphicsDevice) content (lightViewProjection: Matrix) =
+    let shadowMap = content.Effects.ShadowMap
+    
     device.SetRenderTarget(content.ShadowMap)
     device.Clear(Color.White)
     device.BlendState <- BlendState.Opaque
 
-    let effect = content.Effects.Effect
+    shadowMap.SetLightViewProjection lightViewProjection
 
-    effect.CurrentTechnique <- effect.Techniques.["ShadowMap"]
-    effect.Parameters.["xLightsViewProjection"].SetValue(lightViewProjection)
+    drawSphereVertices shadowMap.Effect shadowMap.SetWorld device content
 
-    drawSphereVertices effect device content
-    effect.Parameters.["xWorld"].SetValue(Matrix.Identity)
-    drawTerrainVertices effect device content
+    shadowMap.SetWorld Matrix.Identity
+    drawTerrainVertices shadowMap.Effect device content
 
 let draw (gameTime: GameTime) (device: GraphicsDevice) state content =
     let time = (single gameTime.TotalGameTime.TotalMilliseconds) / 100.0f

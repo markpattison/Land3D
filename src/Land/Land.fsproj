@@ -6,6 +6,9 @@
     <OutputType>WinExe</OutputType>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="content\effects\shadowMap.xnb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="content\effects\effects.xnb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
