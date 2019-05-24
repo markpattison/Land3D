@@ -27,8 +27,6 @@ let drawTerrain (x: bool) (viewMatrix: Matrix) (clipPlane: Vector4) (device: Gra
     ground.SetAmbient 0.5f
     ground.SetAlphaAfterWaterDepthWeighting x
     ground.Effect.Parameters.["xMinMaxHeight"].SetValue(content.MinMaxTerrainHeight)
-    ground.Effect.Parameters.["xPerlinSize3D"].SetValue(15.0f)
-    ground.Effect.Parameters.["xRandomTexture3D"].SetValue(content.PerlinTexture3D)
 
     device.BlendState <- BlendState.Opaque
 

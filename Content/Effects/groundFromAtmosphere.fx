@@ -362,8 +362,7 @@ PixelToFrame GroundFromAtmospherePS(GroundFromAtmosphere_VertexToPixel PSInput)
 
     float heightSpan = xMinMaxHeight.y - xMinMaxHeight.x;
     float3 posXY = float3(PSInput.WorldPosition.xy, 0.0);
-    float normAdjust = 0.1 * Perlin3D(PSInput.WorldPosition / 100.0);
-    float normHeight = (PSInput.WorldPosition.y - xMinMaxHeight.x) / heightSpan + normAdjust;
+    float normHeight = (PSInput.WorldPosition.y - xMinMaxHeight.x) / heightSpan;
 
     weights.x = (normHeight - grassFrom) / (sandTo - grassFrom);
     weights.y = min((normHeight - sandTo) / (grassFrom - sandTo), (normHeight - rockFrom) / (grassTo - rockFrom));
@@ -385,7 +384,7 @@ PixelToFrame GroundFromAtmospherePS(GroundFromAtmosphere_VertexToPixel PSInput)
 
 	float blendFactor = clamp((PSInput.Depth - 0.95) / 0.05, 0, 1);
 
-    float3 normal = normalize(PSInput.Normal - BumpMapNoiseGradient(PSInput.WorldPosition));
+    float3 normal = normalize(PSInput.Normal);
 
     float3 reflectionVector = -reflect(xLightDirection, normal);
     float specular = dot(normalize(reflectionVector), normalize(PSInput.WorldPosition - xCameraPosition));
