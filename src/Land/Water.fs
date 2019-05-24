@@ -14,6 +14,20 @@ type WaterParameters =
         Opacity: single;
     }
 
+type WaterEffect =
+    {
+        Effect: Effect
+        SetWorld: Matrix -> unit
+        SetView: Matrix -> unit
+        SetReflectionView: Matrix -> unit
+        SetCameraPosition: Vector3 -> unit
+        SetLightDirection: Vector3 -> unit
+        SetShadowMap: RenderTarget2D -> unit
+        SetReflectionMap: RenderTarget2D -> unit
+        SetRefractionMap: RenderTarget2D -> unit
+        SetTime: single -> unit
+    }
+
 type Water =
     {
         WaterParameters: WaterParameters
@@ -23,7 +37,7 @@ type Water =
         PerlinTexture3D: Texture3D
         RefractionClipPlane: Vector4
         ReflectionClipPlane: Vector4
-        Effect: Effect
+        Effect: WaterEffect
         Device: GraphicsDevice
     }
 
@@ -33,6 +47,22 @@ let applyToEffect waterParameters (effect: Effect) =
     effect.Parameters.["xWindForce"].SetValue(waterParameters.WindForce)
     effect.Parameters.["xWindDirection"].SetValue(waterParameters.WindDirection)
     effect.Parameters.["xWaterOpacity"].SetValue(waterParameters.Opacity)
+
+let waterEffect (effect: Effect) (perlinTexture3D: Texture3D) =
+    effect.Parameters.["xRandomTexture3D"].SetValue(perlinTexture3D)
+    effect.Parameters.["xPerlinSize3D"].SetValue(single (perlinTexture3D.Depth - 1))
+    {
+        Effect = effect
+        SetWorld = effect.Parameters.["xWorld"].SetValue
+        SetView = effect.Parameters.["xView"].SetValue
+        SetReflectionView = effect.Parameters.["xReflectionView"].SetValue
+        SetCameraPosition = effect.Parameters.["xCameraPosition"].SetValue
+        SetLightDirection = effect.Parameters.["xLightDirection"].SetValue
+        SetShadowMap = effect.Parameters.["xShadowMap"].SetValue
+        SetReflectionMap = effect.Parameters.["xReflectionMap"].SetValue
+        SetRefractionMap = effect.Parameters.["xRefractionMap"].SetValue
+        SetTime = effect.Parameters.["xTime"].SetValue
+    }
 
 let waterVertices waterSize =
     [|
@@ -55,7 +85,7 @@ let prepare (effect: Effect) (perlinTexture3D: Texture3D) (waterParameters: Wate
         PerlinTexture3D = perlinTexture3D
         RefractionClipPlane = Vector4(Vector3.Down, -0.00001f)
         ReflectionClipPlane = Vector4(Vector3.Up, 0.00001f)
-        Effect = effect
+        Effect = waterEffect effect perlinTexture3D
         Device = device
     }
 
@@ -85,19 +115,19 @@ let prepareFrameAndReturnReflectionView water view camera drawTerrain drawSkyDom
     reflectionView
 
 let drawWater water (time: single) (world: Matrix) (view: Matrix) (lightDirection: Vector3) (camera: FreeCamera) (reflectionView: Matrix) =
-    water.Effect.CurrentTechnique <- water.Effect.Techniques.["Water"]
-    water.Effect.Parameters.["xWorld"].SetValue(world)
-    water.Effect.Parameters.["xView"].SetValue(view)
-    water.Effect.Parameters.["xReflectionView"].SetValue(reflectionView)
-    water.Effect.Parameters.["xLightDirection"].SetValue(lightDirection)
-    water.Effect.Parameters.["xCameraPosition"].SetValue(camera.Position)
-    water.Effect.Parameters.["xReflectionMap"].SetValue(water.ReflectionRenderTarget)
-    water.Effect.Parameters.["xRefractionMap"].SetValue(water.RefractionRenderTarget)
-    water.Effect.Parameters.["xTime"].SetValue(time)
-    water.Effect.Parameters.["xRandomTexture3D"].SetValue(water.PerlinTexture3D)
-    water.Effect.Parameters.["xPerlinSize3D"].SetValue(15.0f)
+    let effect = water.Effect
+    effect.Effect.CurrentTechnique <- effect.Effect.Techniques.["Water"]
 
-    water.Effect.CurrentTechnique.Passes |> Seq.iter
+    effect.SetWorld world
+    effect.SetView view
+    effect.SetReflectionView reflectionView
+    effect.SetLightDirection lightDirection
+    effect.SetCameraPosition camera.Position
+    effect.SetReflectionMap water.ReflectionRenderTarget
+    effect.SetRefractionMap water.RefractionRenderTarget
+    effect.SetTime time
+
+    effect.Effect.CurrentTechnique.Passes |> Seq.iter
         (fun pass ->
             pass.Apply()
             water.Device.DrawUserPrimitives<VertexPositionTexture>(PrimitiveType.TriangleList, water.Vertices, 0, water.Vertices.Length / 3)
