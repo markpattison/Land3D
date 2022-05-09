@@ -91,13 +91,13 @@ let prepare (effect: Effect) (perlinTexture3D: Texture3D) (waterParameters: Wate
 
 let drawRefractionMap water drawTerrain view =
     water.Device.SetRenderTarget(water.RefractionRenderTarget)
-    water.Device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
+    water.Device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.Transparent, 1.0f, 0)
     drawTerrain view water.RefractionClipPlane
     water.Device.SetRenderTarget(null)
 
 let drawReflectionMap water drawTerrain drawSkyDome reflectionView =
     water.Device.SetRenderTarget(water.ReflectionRenderTarget)
-    water.Device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.TransparentBlack, 1.0f, 0)
+    water.Device.Clear(ClearOptions.Target ||| ClearOptions.DepthBuffer, Color.Transparent, 1.0f, 0)
     drawTerrain reflectionView water.ReflectionClipPlane
     drawSkyDome reflectionView
     water.Device.SetRenderTarget(null)
